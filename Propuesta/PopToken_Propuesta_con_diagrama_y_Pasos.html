@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<!-- saved from url=(0058)file:///C:/Users/mariano/Downloads/propuesta_poptoken.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PopToken — Propuesta de Caso de Uso</title>
+<link href="./PopToken — Propuesta de Caso de Uso_files/css2" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b27;
+    --border:    #232d3f;
+    --accent:    #4d9de0;
+    --accent2:   #7eb8e8;
+    --muted:     #566577;
+    --text:      #cdd6e0;
+    --text-body: #8fa3b8;
+    --code-bg:   #0a0e14;
+    --code-text: #cdd6e0;
+    --red:       #e05252;
+    --radius:    6px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 400;
+    line-height: 1.75;
+  }
+
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 72px 48px 100px;
+  }
+
+  /* ── Header ── */
+  header {
+    padding-bottom: 40px;
+    margin-bottom: 52px;
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .pre-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'Lora', serif;
+    font-size: 42px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--text);
+    letter-spacing: -.02em;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    margin-bottom: 32px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 6px 40px;
+    width: fit-content;
+  }
+
+  .meta-row {
+    display: contents;
+  }
+
+  .meta-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    align-self: start;
+    padding-top: 1px;
+  }
+
+  .meta-value {
+    font-size: 13.5px;
+    color: var(--text-body);
+    font-weight: 500;
+    line-height: 1.6;
+  }
+
+  /* ── Sections ── */
+  section {
+    margin-bottom: 52px;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Lora', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+    letter-spacing: -.01em;
+  }
+
+  h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin: 28px 0 10px;
+  }
+
+  p {
+    font-size: 14.5px;
+    color: var(--text-body);
+    margin-bottom: 12px;
+    line-height: 1.8;
+  }
+
+  strong { color: var(--text); font-weight: 600; }
+
+  /* ── Feature list ── */
+  .features {
+    margin: 18px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .feature {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: #161b27;
+  }
+
+  .feature:last-child { border-bottom: none; }
+
+  .feature-bar {
+    width: 3px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .feature-content {
+    padding: 14px 18px;
+  }
+
+  .feature-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .feature-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── Tables ── */
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 16px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    background: #161b27;
+  }
+
+  thead tr {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 10px 16px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  td {
+    padding: 12px 16px;
+    color: var(--text-body);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.6;
+    font-size: 13.5px;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  .td-mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* ── Transaction blocks ── */
+  .tx-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .tx-block {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #161b27;
+    overflow: hidden;
+  }
+
+  .tx-head {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .tx-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .08em;
+  }
+
+  .tx-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .tx-body {
+    padding: 12px 18px 14px;
+  }
+
+  .tx-body p {
+    font-size: 13.5px;
+    margin-bottom: 10px;
+    color: var(--muted);
+  }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    padding: 16px 18px;
+    border-radius: 4px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+
+  .jk { color: #79c0ff; }   /* json key   */
+  .js { color: #a5d6a7; }   /* json string */
+  .jn { color: #ffb74d; }   /* json number */
+
+  /* ── Highlight box ── */
+  .highlight-box {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px;
+    margin-top: 16px;
+  }
+
+  .highlight-box p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-body);
+  }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  footer span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+    letter-spacing: .06em;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    background: var(--code-bg);
+    color: var(--text);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    .page { padding: 40px 24px 80px; }
+    h1 { font-size: 30px; }
+  }
+
+  @media print {
+    .page { padding: 40px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="pre-title">Trabajo Práctico Integrador · Blockchain Distribuida y CUDA</div>
+    <h1>PopToken</h1>
+    <p class="subtitle">Propuesta de caso de uso — sistema de fidelidad sobre blockchain</p>
+    <div class="meta-grid">
+      <span class="meta-label">Alumnos</span>
+      <span class="meta-value">Mariano Cavallo Sassi · Valentino Aimale · Lautaro Marino</span>
+      <span class="meta-label">Fecha</span>
+      <span class="meta-value">Junio 2026</span>
+    </div>
+  </header>
+
+  <!-- 1 -->
+  <section>
+    <div class="section-label">01 — Descripción General</div>
+    <h2>¿Qué es PopToken?</h2>
+    <p><strong>PopToken</strong> es un sistema de fidelidad basado en blockchain donde un cine emite tokens digitales a sus clientes como recompensa por la compra de entradas. Estos tokens pueden transferirse libremente entre usuarios y canjearse por entradas gratuitas o productos del cine.</p>
+    <p>El sistema modela el concepto central de una blockchain: un registro distribuido, inmutable y descentralizado de transferencias de valor entre partes que no necesitan confiar entre sí ni depender de un intermediario central.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="section-label">02 — Justificación</div>
+    <h2>¿Por qué blockchain?</h2>
+    <p>Los programas de puntos tradicionales son sistemas <strong>centralizados</strong>: el emisor puede modificar o cancelar los puntos unilateralmente, y el usuario no puede transferirlos sin pasar por la plataforma del emisor. Blockchain resuelve esto de forma estructural:</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Inmutabilidad</div>
+          <p class="feature-desc">Una vez acreditados, los tokens no pueden ser borrados ni alterados por el cine ni por ningún tercero.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Transferibilidad sin intermediarios</div>
+          <p class="feature-desc">Un usuario puede enviar tokens a otro directamente, sin que el cine intervenga ni autorice la operación.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Transparencia</div>
+          <p class="feature-desc">Cualquier participante puede verificar el saldo de cualquier billetera consultando la cadena.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Descentralización real</div>
+          <p class="feature-desc">No existe una base de datos central que pueda ser hackeada, caída o manipulada.</p>
+        </div>
+      </div>
+    </div>
+    <p>Esto contrasta con casos como trazabilidad de medicamentos, donde ANMAT actúa como árbitro central confiable y una base de datos centralizada es suficiente. En PopToken <strong>no existe ni se necesita un árbitro central</strong>: la blockchain cumple ese rol.</p>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="section-label">03 — Actores</div>
+    <h2>Actores del Sistema</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Actor</th><th>Rol</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-mono">Cine (emisor)</td>
+            <td>Genera y acredita tokens al usuario cuando compra una entrada</td>
+          </tr>
+          <tr>
+            <td class="td-mono">Usuario</td>
+            <td>Acumula tokens, los transfiere a otros usuarios o los canjea por beneficios</td>
+          </tr>
+          <tr>
+            <td class="td-mono">Minero (CUDA / CPU)</td>
+            <td>Valida e incorpora bloques de transacciones a la cadena mediante Proof of Work</td>
+          </tr>
+          <tr>
+            <td class="td-mono">Nodo Coordinador (NCT)</td>
+            <td>Organiza transacciones pendientes, forma bloques y distribuye tareas de minado</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="section-label">04 — Modelo de Datos</div>
+    <h2>Tipos de Transacción</h2>
+    <p>El sistema contempla cuatro tipos de transacción. Las tres primeras representan operaciones económicas del día a día; la cuarta gestiona la gobernanza de la red.</p>
+
+    <div class="tx-list">
+
+      <div class="tx-block">
+        <div class="tx-head">
+          <span class="tx-num">4.1</span>
+          <span class="tx-name">Emisión</span>
+        </div>
+        <div class="tx-body">
+          <p>El cine acredita tokens a un usuario tras la compra de una entrada.</p>
+          <pre>{
+  <span class="jk">"tipo"</span>:      <span class="js">"emision"</span>,
+  <span class="jk">"from"</span>:      <span class="js">"Cine_Hoyts_Abasto"</span>,
+  <span class="jk">"to"</span>:        <span class="js">"usuario_0x4F3a"</span>,
+  <span class="jk">"tokens"</span>:    <span class="jn">10</span>,
+  <span class="jk">"motivo"</span>:    <span class="js">"compra_entrada"</span>,
+  <span class="jk">"pelicula"</span>:  <span class="js">"Obsesión"</span>,
+  <span class="jk">"timestamp"</span>: <span class="js">"2026-06-08T20:15:00Z"</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="tx-block">
+        <div class="tx-head">
+          <span class="tx-num">4.2</span>
+          <span class="tx-name">Transferencia</span>
+        </div>
+        <div class="tx-body">
+          <p>Un usuario transfiere tokens a otro directamente, sin intervención del cine.</p>
+          <pre>{
+  <span class="jk">"tipo"</span>:      <span class="js">"transferencia"</span>,
+  <span class="jk">"from"</span>:      <span class="js">"usuario_0x4F3a"</span>,
+  <span class="jk">"to"</span>:        <span class="js">"usuario_0x9B1c"</span>,
+  <span class="jk">"tokens"</span>:    <span class="jn">10</span>,
+  <span class="jk">"timestamp"</span>: <span class="js">"2026-06-08T21:00:00Z"</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="tx-block">
+        <div class="tx-head">
+          <span class="tx-num">4.3</span>
+          <span class="tx-name">Canje</span>
+        </div>
+        <div class="tx-body">
+          <p>Un usuario gasta tokens para obtener un beneficio (entrada gratis o producto del cine).</p>
+          <pre>{
+  <span class="jk">"tipo"</span>:      <span class="js">"canje"</span>,
+  <span class="jk">"from"</span>:      <span class="js">"usuario_0x9B1c"</span>,
+  <span class="jk">"to"</span>:        <span class="js">"Cine_Hoyts_Abasto"</span>,
+  <span class="jk">"tokens"</span>:    <span class="jn">50</span>,
+  <span class="jk">"beneficio"</span>: <span class="js">"entrada_gratis"</span>,
+  <span class="jk">"timestamp"</span>: <span class="js">"2026-06-09T18:30:00Z"</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="tx-block">
+        <div class="tx-head">
+          <span class="tx-num">4.4</span>
+          <span class="tx-name">Autorizar Emisor</span>
+        </div>
+        <div class="tx-body">
+          <p>Incorpora un nuevo cine a la red como emisor autorizado. Requiere aprobación de la mayoría de los emisores ya existentes.</p>
+          <pre>{
+  <span class="jk">"tipo"</span>:         <span class="js">"autorizar_emisor"</span>,
+  <span class="jk">"solicitante"</span>:  <span class="js">"CinePolka_0xF7a1"</span>,
+  <span class="jk">"aprobado_por"</span>: [<span class="js">"Hoyts_0xA1b2"</span>, <span class="js">"Cinemark_0xC3d4"</span>],
+  <span class="jk">"timestamp"</span>:    <span class="js">"2026-06-08T09:00:00Z"</span>
+}</pre>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- genesis -->
+  <section>
+    <div class="section-label">05 — Gobernanza</div>
+    <h2>Bloque Génesis y Emisores Autorizados</h2>
+    <p>El <strong>bloque génesis</strong> es el primer bloque de la cadena, el único que no tiene predecesor. En PopToken cumple un rol especial: define qué billeteras tienen permiso para emitir tokens. Ninguna otra billetera puede firmar una transacción de tipo <code>emision</code>.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo del Génesis</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-mono">previous_hash</td>
+            <td>"0000...0000" — no tiene bloque anterior por definición</td>
+          </tr>
+          <tr>
+            <td class="td-mono">emisores_autorizados</td>
+            <td>Lista de billeteras de cines fundadores con permiso de emisión</td>
+          </tr>
+          <tr>
+            <td class="td-mono">quorum_requerido</td>
+            <td>Cantidad mínima de firmas necesarias para autorizar un nuevo emisor</td>
+          </tr>
+          <tr>
+            <td class="td-mono">tokens_por_entrada</td>
+            <td>Cantidad de tokens que se acreditan por cada compra de entrada</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre style="margin-top:14px">{
+  <span class="jk">"tipo"</span>:                <span class="js">"genesis"</span>,
+  <span class="jk">"previous_hash"</span>:       <span class="js">"0000000000000000"</span>,
+  <span class="jk">"emisores_autorizados"</span>: [<span class="js">"Hoyts_0xA1b2"</span>, <span class="js">"Cinemark_0xC3d4"</span>],
+  <span class="jk">"quorum_requerido"</span>:    <span class="jn">2</span>,
+  <span class="jk">"tokens_por_entrada"</span>:  <span class="jn">10</span>,
+  <span class="jk">"timestamp"</span>:           <span class="js">"2026-01-01T00:00:00Z"</span>
+}</pre>
+    <div class="highlight-box" style="margin-top:16px">
+      <p>Para agregar un nuevo cine a la red una vez que está en funcionamiento, se utiliza la transacción <strong>autorizar_emisor</strong> (sección 4.4). El NCT valida que la cantidad de firmas de aprobación alcance el quórum definido en el génesis. Si se cumple, el nuevo cine queda habilitado a partir del bloque siguiente.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="section-label">06 — Estructura</div>
+    <h2>Estructura de un Bloque</h2>
+    <p>Cada bloque agrupa un conjunto de transacciones pendientes y las ancla a la cadena mediante Proof of Work.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-mono">previous_hash</td>
+            <td>Hash del bloque anterior — garantiza el encadenamiento e inmutabilidad</td>
+          </tr>
+          <tr>
+            <td class="td-mono">nonce</td>
+            <td>Valor encontrado por el minero que resuelve el desafío PoW</td>
+          </tr>
+          <tr>
+            <td class="td-mono">timestamp</td>
+            <td>Fecha y hora de creación del bloque</td>
+          </tr>
+          <tr>
+            <td class="td-mono">transactions</td>
+            <td>Lista de transacciones incluidas en el bloque</td>
+          </tr>
+          <tr>
+            <td class="td-mono">block_hash</td>
+            <td>Hash del bloque actual, calculado sobre todos los campos anteriores</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="section-label">07 — Regla de Negocio</div>
+    <h2>Validación de Saldo</h2>
+    <p>El Nodo Coordinador debe rechazar cualquier transacción de tipo <strong>transferencia</strong> o <strong>canje</strong> donde el usuario no disponga de saldo suficiente.</p>
+    <div class="highlight-box">
+      <p>El saldo se calcula recorriendo la cadena completa: se suman todas las emisiones y transferencias recibidas, y se restan las transferencias enviadas y los canjes realizados. Esta lógica es equivalente al modelo <strong>UTXO de Bitcoin</strong>.</p>
+    </div>
+  </section>
+
+  <!-- 8 — Diagrama de Arquitectura -->
+  <section>
+    <div class="section-label">08 — Arquitectura</div>
+    <h2>Diagrama de Arquitectura del Sistema</h2>
+    <p>El siguiente diagrama muestra todos los componentes del sistema y cómo se integran entre sí, incluyendo las flechas de ida y vuelta y los puntos de reintento automático en cada capa.</p>
+
+    <style>
+      /* ── Diagrama embed ── */
+      .diag-wrap {
+        margin: 24px 0;
+        background: #0a0e14;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow-x: auto;
+        padding: 24px 20px 28px;
+      }
+      .diag-wrap svg { display: block; max-width: 100%; }
+
+      .diag-lbl-layer { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+      .diag-lbl-main  { font-family: 'Source Sans 3', sans-serif; font-weight: 700; font-size: 13px; }
+      .diag-lbl-sub   { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
+      .diag-lbl-tiny  { font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
+      .diag-arrlbl    { font-family: 'IBM Plex Mono', monospace; font-size: 9px; }
+
+      .diag-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        margin-top: 18px;
+        padding: 12px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      .diag-leg { display: flex; align-items: center; gap: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
+      .diag-leg-line { width: 28px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+    </style>
+
+    <div class="diag-wrap">
+<svg width="100%" viewBox="0 0 820 1260" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="d-arr-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#00d4aa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="d-arr-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#7c6fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="d-arr-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="d-arr-coral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#f07060" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="d-arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#5599ee" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="d-arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#4acc88" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="d-arr-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#607080" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="d-arr-retry" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- ═══ CAPA 0 — ACTORES ═══ -->
+<rect x="180" y="20" width="460" height="110" rx="10" fill="#0d1117" stroke="#1e3a2a" stroke-width="1"/>
+<rect x="180" y="20" width="460" height="4" rx="2" fill="#00d4aa"/>
+<text class="diag-lbl-layer" x="200" y="36" fill="#00a888">00 — actores externos</text>
+<rect x="200" y="44" width="190" height="72" rx="7" fill="#0a1410" stroke="#1e4030" stroke-width="1"/>
+<text class="diag-lbl-main" x="295" y="72" text-anchor="middle" fill="#00d4aa">Cine (emisor)</text>
+<text class="diag-lbl-sub"  x="295" y="90" text-anchor="middle" fill="#008860">emision · autorizar_emisor</text>
+<rect x="410" y="44" width="210" height="72" rx="7" fill="#0a1410" stroke="#1e4030" stroke-width="1"/>
+<text class="diag-lbl-main" x="515" y="72" text-anchor="middle" fill="#00d4aa">Usuario / Wallet</text>
+<text class="diag-lbl-sub"  x="515" y="90" text-anchor="middle" fill="#008860">transferencia · canje</text>
+
+<!-- Actores ↔ API -->
+<line x1="295" y1="134" x2="295" y2="202" stroke="#00d4aa" stroke-width="1.5" marker-end="url(#d-arr-teal)"/>
+<line x1="515" y1="134" x2="515" y2="202" stroke="#00d4aa" stroke-width="1.5" marker-end="url(#d-arr-teal)"/>
+<text class="diag-arrlbl" x="412" y="170" text-anchor="middle" fill="#00a888">POST /tx  ·  GET /wallet/:id/balance</text>
+<line x1="270" y1="202" x2="270" y2="134" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#d-arr-teal)"/>
+<line x1="490" y1="202" x2="490" y2="134" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#d-arr-teal)"/>
+<text class="diag-arrlbl" x="412" y="194" text-anchor="middle" fill="#008860">200 OK · 202 Accepted · 4xx error</text>
+
+<!-- ═══ CAPA 1 — FRONT & API ═══ -->
+<rect x="90" y="202" width="640" height="130" rx="10" fill="#0d1117" stroke="#1e3040" stroke-width="1"/>
+<rect x="90" y="202" width="640" height="4" rx="2" fill="#00d4aa"/>
+<text class="diag-lbl-layer" x="110" y="218" fill="#008860">01 — front &amp; api pública  ·  ≥ 2 réplicas</text>
+<rect x="108" y="226" width="180" height="92" rx="7" fill="#080e18" stroke="#1a3050" stroke-width="1"/>
+<text class="diag-lbl-main" x="198" y="252" text-anchor="middle" fill="#00d4aa">Web UI</text>
+<text class="diag-lbl-sub"  x="198" y="270" text-anchor="middle" fill="#4488aa">saldo wallet · historial txs</text>
+<text class="diag-lbl-tiny" x="198" y="306" text-anchor="middle" fill="#2a5070">(Python / Node)</text>
+<rect x="315" y="226" width="200" height="92" rx="7" fill="#080e18" stroke="#1a3050" stroke-width="1"/>
+<text class="diag-lbl-main" x="415" y="252" text-anchor="middle" fill="#00d4aa">REST API</text>
+<text class="diag-lbl-sub"  x="415" y="270" text-anchor="middle" fill="#4488aa">POST /tx · GET /block/:hash</text>
+<text class="diag-lbl-tiny" x="415" y="306" text-anchor="middle" fill="#2a5070">(Python / Node)</text>
+<rect x="540" y="226" width="172" height="92" rx="7" fill="#080e18" stroke="#1a3050" stroke-width="1"/>
+<text class="diag-lbl-main" x="626" y="252" text-anchor="middle" fill="#00d4aa">Status API</text>
+<text class="diag-lbl-sub"  x="626" y="270" text-anchor="middle" fill="#4488aa">GET /status → JSON</text>
+<text class="diag-lbl-tiny" x="626" y="306" text-anchor="middle" fill="#2a5070">logs en disco</text>
+
+<!-- retry API→NCT -->
+<path d="M90 262 Q44 262 44 300 Q44 338 90 338" fill="none" stroke="#f5a623" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#d-arr-retry)"/>
+<text class="diag-lbl-tiny" x="30" y="290" text-anchor="middle" fill="#c97f0a">retry</text>
+<text class="diag-lbl-tiny" x="30" y="302" text-anchor="middle" fill="#c97f0a">3×</text>
+<text class="diag-lbl-tiny" x="30" y="314" text-anchor="middle" fill="#c97f0a">backoff</text>
+
+<!-- API ↔ NCT -->
+<line x1="380" y1="332" x2="350" y2="410" stroke="#7c6fff" stroke-width="1.5" marker-end="url(#d-arr-purple)"/>
+<text class="diag-arrlbl" x="296" y="378" text-anchor="middle" fill="#7c6fff">tx payload</text>
+<line x1="420" y1="410" x2="450" y2="332" stroke="#7c6fff" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#d-arr-purple)"/>
+<text class="diag-arrlbl" x="510" y="378" text-anchor="middle" fill="#5a4fd6">txid / error</text>
+
+<!-- ═══ CAPA 2 — NCT ═══ -->
+<rect x="90" y="410" width="540" height="154" rx="10" fill="#0d1117" stroke="#2a2060" stroke-width="1"/>
+<rect x="90" y="410" width="540" height="4" rx="2" fill="#7c6fff"/>
+<text class="diag-lbl-layer" x="110" y="426" fill="#5a4fd6">02 — nodo coordinador de tareas (NCT)  ·  ≥ 2 réplicas</text>
+<rect x="108" y="434" width="240" height="116" rx="7" fill="#08081e" stroke="#2a2060" stroke-width="1"/>
+<text class="diag-lbl-main" x="228" y="458" text-anchor="middle" fill="#9888ff">Coordinador principal</text>
+<text class="diag-lbl-sub"  x="228" y="476" text-anchor="middle" fill="#5050a0">Valida txs (saldo, emisor)</text>
+<text class="diag-lbl-sub"  x="228" y="492" text-anchor="middle" fill="#5050a0">Forma bloques</text>
+<text class="diag-lbl-sub"  x="228" y="508" text-anchor="middle" fill="#5050a0">Consenso PoW</text>
+<text class="diag-lbl-sub"  x="228" y="524" text-anchor="middle" fill="#5050a0">Verifica nonce ganador</text>
+<rect x="374" y="434" width="238" height="116" rx="7" fill="#08081e" stroke="#2a2060" stroke-width="1"/>
+<text class="diag-lbl-main" x="493" y="458" text-anchor="middle" fill="#9888ff">Pool de transacciones</text>
+<text class="diag-lbl-sub"  x="493" y="476" text-anchor="middle" fill="#5050a0">Acumula txs pendientes</text>
+<text class="diag-lbl-sub"  x="493" y="492" text-anchor="middle" fill="#5050a0">Fragmenta rangos de nonce</text>
+<text class="diag-lbl-sub"  x="493" y="508" text-anchor="middle" fill="#5050a0">Monitorea keepalive GPU</text>
+<text class="diag-lbl-sub"  x="493" y="524" text-anchor="middle" fill="#5050a0">Escala dificultad dinámico</text>
+<line x1="362" y1="440" x2="362" y2="544" stroke="#2a2060" stroke-width="0.8" stroke-dasharray="4 3"/>
+
+<!-- NCT ↔ Redis (validar) -->
+<line x1="680" y1="468" x2="718" y2="468" stroke="#5599ee" stroke-width="1.5" marker-end="url(#d-arr-blue)"/>
+<text class="diag-lbl-tiny" x="722" y="462" fill="#5599ee">GET balance · SISMEMBER</text>
+<line x1="718" y1="490" x2="680" y2="490" stroke="#5599ee" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#d-arr-blue)"/>
+<text class="diag-lbl-tiny" x="722" y="506" fill="#3366aa">→ valor OK</text>
+
+<!-- Flujo NCT texto -->
+<rect x="90" y="566" width="540" height="38" rx="6" fill="#080810" stroke="#1e1e40" stroke-width="1"/>
+<text class="diag-lbl-tiny" x="360" y="580" text-anchor="middle" fill="#5050a0">Flujo NCT: recibe tx → valida saldo &amp; emisor (Redis) → pool:pending → forma bloque</text>
+<text class="diag-lbl-tiny" x="360" y="595" text-anchor="middle" fill="#5050a0">→ publica tarea PoW en RabbitMQ → espera results.nct → verifica hash → MULTI/EXEC en Redis</text>
+
+<!-- NCT ↔ RabbitMQ -->
+<line x1="310" y1="606" x2="278" y2="684" stroke="#f5a623" stroke-width="1.5" marker-end="url(#d-arr-amber)"/>
+<text class="diag-arrlbl" x="224" y="650" text-anchor="middle" fill="#f5a623">publish task</text>
+<line x1="338" y1="684" x2="370" y2="606" stroke="#f5a623" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#d-arr-amber)"/>
+<text class="diag-arrlbl" x="432" y="650" text-anchor="middle" fill="#c97f0a">nonce ganador</text>
+
+<!-- ═══ CAPA 3 — RABBITMQ ═══ -->
+<rect x="90" y="684" width="540" height="140" rx="10" fill="#0d1117" stroke="#3a2808" stroke-width="1"/>
+<rect x="90" y="684" width="540" height="4" rx="2" fill="#f5a623"/>
+<text class="diag-lbl-layer" x="110" y="700" fill="#c97f0a">03 — mensajería asincrónica — rabbitmq</text>
+<rect x="108" y="708" width="160" height="100" rx="7" fill="#120a00" stroke="#3a2808" stroke-width="1"/>
+<text class="diag-lbl-main" x="188" y="732" text-anchor="middle" fill="#f5a623">mining.tasks</text>
+<text class="diag-lbl-sub"  x="188" y="750" text-anchor="middle" fill="#886010">exchange · direct</text>
+<text class="diag-lbl-sub"  x="188" y="766" text-anchor="middle" fill="#886010">→ tasks.gpu / tasks.cpu</text>
+<text class="diag-lbl-tiny" x="188" y="798" text-anchor="middle" fill="#604008">prefetch=1 · ACK manual</text>
+<rect x="294" y="708" width="160" height="100" rx="7" fill="#120a00" stroke="#3a2808" stroke-width="1"/>
+<text class="diag-lbl-main" x="374" y="732" text-anchor="middle" fill="#f5a623">mining.results</text>
+<text class="diag-lbl-sub"  x="374" y="750" text-anchor="middle" fill="#886010">exchange · direct</text>
+<text class="diag-lbl-sub"  x="374" y="768" text-anchor="middle" fill="#886010">→ results.nct</text>
+<text class="diag-lbl-tiny" x="374" y="798" text-anchor="middle" fill="#604008">primer ganador · descarta dup.</text>
+<rect x="480" y="708" width="132" height="100" rx="7" fill="#120a00" stroke="#3a2808" stroke-width="1"/>
+<text class="diag-lbl-main" x="546" y="730" text-anchor="middle" fill="#f5a623">miners.keepalive</text>
+<text class="diag-lbl-sub"  x="546" y="748" text-anchor="middle" fill="#886010">exchange · fanout</text>
+<text class="diag-lbl-sub"  x="546" y="766" text-anchor="middle" fill="#886010">→ keepalive.pool / .nct</text>
+<text class="diag-lbl-tiny" x="546" y="800" text-anchor="middle" fill="#604008">TTL tareas viejas</text>
+
+<!-- nack+requeue loop -->
+<path d="M90 730 Q36 730 36 758 Q36 800 90 800" fill="none" stroke="#f5a623" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#d-arr-retry)"/>
+<text class="diag-lbl-tiny" x="22" y="752" text-anchor="middle" fill="#c97f0a">nack +</text>
+<text class="diag-lbl-tiny" x="22" y="764" text-anchor="middle" fill="#c97f0a">requeue</text>
+<text class="diag-lbl-tiny" x="22" y="776" text-anchor="middle" fill="#c97f0a">worker</text>
+<text class="diag-lbl-tiny" x="22" y="788" text-anchor="middle" fill="#c97f0a">caído</text>
+
+<!-- RabbitMQ ↔ Workers -->
+<line x1="220" y1="824" x2="220" y2="892" stroke="#f07060" stroke-width="1.5" marker-end="url(#d-arr-coral)"/>
+<text class="diag-arrlbl" x="160" y="862" text-anchor="middle" fill="#f07060">consume task</text>
+<line x1="258" y1="892" x2="258" y2="824" stroke="#f07060" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#d-arr-coral)"/>
+<text class="diag-arrlbl" x="320" y="862" text-anchor="middle" fill="#c94030">ACK + nonce</text>
+
+<!-- keepalive Workers → Rabbit -->
+<path d="M630 930 Q680 930 680 860 Q680 760 630 756" fill="none" stroke="#607080" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#d-arr-gray)"/>
+<text class="diag-lbl-tiny" x="692" y="844" text-anchor="start" fill="#607080">keepalive</text>
+<text class="diag-lbl-tiny" x="692" y="856" text-anchor="start" fill="#607080">cada ~5s</text>
+
+<!-- ═══ CAPA 4 — WORKERS ═══ -->
+<rect x="90" y="892" width="540" height="130" rx="10" fill="#0d1117" stroke="#3a1a10" stroke-width="1"/>
+<rect x="90" y="892" width="540" height="4" rx="2" fill="#f07060"/>
+<text class="diag-lbl-layer" x="110" y="908" fill="#c94030">04 — workers de minería — pilar 1</text>
+<rect x="108" y="916" width="240" height="92" rx="7" fill="#140806" stroke="#3a1a10" stroke-width="1"/>
+<text class="diag-lbl-main" x="228" y="942" text-anchor="middle" fill="#f07060">Minero GPU (CUDA)</text>
+<text class="diag-lbl-sub"  x="228" y="960" text-anchor="middle" fill="#804040">C/C++ · CUDA toolkit</text>
+<text class="diag-lbl-sub"  x="228" y="976" text-anchor="middle" fill="#804040">MD5 PoW · brute-force por rangos</text>
+<text class="diag-lbl-tiny" x="228" y="994" text-anchor="middle" fill="#603030">VM externa · OpenTofu</text>
+<rect x="374" y="916" width="238" height="92" rx="7" fill="#140806" stroke="#3a1a10" stroke-width="1"/>
+<text class="diag-lbl-main" x="493" y="942" text-anchor="middle" fill="#f07060">Minero CPU × N</text>
+<text class="diag-lbl-sub"  x="493" y="960" text-anchor="middle" fill="#804040">fallback sin GPU · dificultad reducida</text>
+<text class="diag-lbl-tiny" x="493" y="994" text-anchor="middle" fill="#603030">HPA Kubernetes · escala 0 → N pods</text>
+
+<!-- NCT → Redis guardar bloque (curva derecha dentro del viewBox) -->
+<path d="M630 510 Q720 510 720 794 Q720 1080 640 1090" fill="none" stroke="#5599ee" stroke-width="1.4" stroke-dasharray="3 2" marker-end="url(#d-arr-blue)"/>
+<text class="diag-lbl-tiny" x="724" y="740" fill="#5599ee">MULTI/EXEC</text>
+<text class="diag-lbl-tiny" x="724" y="752" fill="#5599ee">bloque confirmado</text>
+<!-- Redis → NCT OK / nil (vuelta) -->
+<path d="M640 1060 Q700 1060 700 794 Q700 530 630 490" fill="none" stroke="#5599ee" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#d-arr-blue)"/>
+<text class="diag-lbl-tiny" x="704" y="772" fill="#3366aa">OK / nil</text>
+<text class="diag-lbl-tiny" x="704" y="784" fill="#3366aa">(NCT reintenta)</text>
+
+<!-- ═══ CAPA 5 — REDIS ═══ -->
+<rect x="90" y="1036" width="640" height="130" rx="10" fill="#0d1117" stroke="#0e2848" stroke-width="1"/>
+<rect x="90" y="1036" width="640" height="4" rx="2" fill="#5599ee"/>
+<text class="diag-lbl-layer" x="110" y="1052" fill="#2d6ec4">05 — persistencia — redis + aof  ·  ≥ 2 réplicas</text>
+<rect x="108" y="1060" width="180" height="92" rx="7" fill="#060c16" stroke="#0e2848" stroke-width="1"/>
+<text class="diag-lbl-main" x="198" y="1082" text-anchor="middle" fill="#5599ee">chain:blocks (LIST)</text>
+<text class="diag-lbl-sub"  x="198" y="1100" text-anchor="middle" fill="#2a5080">cadena canónica · RPUSH</text>
+<text class="diag-lbl-sub"  x="198" y="1116" text-anchor="middle" fill="#2a5080">LINDEX -1 · LLEN = altura</text>
+<rect x="310" y="1060" width="200" height="92" rx="7" fill="#060c16" stroke="#0e2848" stroke-width="1"/>
+<text class="diag-lbl-main" x="410" y="1082" text-anchor="middle" fill="#5599ee">tx:{txid} · wallet:{id}</text>
+<text class="diag-lbl-sub"  x="410" y="1100" text-anchor="middle" fill="#2a5080">HASH · tipo/from/to/tokens</text>
+<text class="diag-lbl-sub"  x="410" y="1116" text-anchor="middle" fill="#2a5080">INCRBY/DECRBY · balance</text>
+<rect x="532" y="1060" width="180" height="92" rx="7" fill="#060c16" stroke="#0e2848" stroke-width="1"/>
+<text class="diag-lbl-main" x="622" y="1082" text-anchor="middle" fill="#5599ee">AOF + RDB + meta</text>
+<text class="diag-lbl-sub"  x="622" y="1100" text-anchor="middle" fill="#2a5080">appendfsync everysec</text>
+<text class="diag-lbl-sub"  x="622" y="1116" text-anchor="middle" fill="#2a5080">StatefulSet · PVC</text>
+
+<!-- retry EXECABORT Redis -->
+<path d="M90 1080 Q36 1080 36 1110 Q36 1148 90 1148" fill="none" stroke="#f5a623" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#d-arr-retry)"/>
+<text class="diag-lbl-tiny" x="22" y="1100" text-anchor="middle" fill="#c97f0a">NCT</text>
+<text class="diag-lbl-tiny" x="22" y="1112" text-anchor="middle" fill="#c97f0a">reintenta</text>
+<text class="diag-lbl-tiny" x="22" y="1124" text-anchor="middle" fill="#c97f0a">si nil</text>
+
+<!-- scraping Prometheus -->
+<line x1="300" y1="1036" x2="300" y2="1210" stroke="#4acc88" stroke-width="0.8" stroke-dasharray="3 3" marker-end="url(#d-arr-green)"/>
+<line x1="450" y1="892"  x2="450" y2="1210" stroke="#4acc88" stroke-width="0.8" stroke-dasharray="3 3" marker-end="url(#d-arr-green)"/>
+<line x1="560" y1="684"  x2="560" y2="1210" stroke="#4acc88" stroke-width="0.8" stroke-dasharray="3 3" marker-end="url(#d-arr-green)"/>
+
+<!-- ═══ CAPA 6 — OBSERVABILIDAD ═══ -->
+<rect x="90" y="1210" width="640" height="38" rx="8" fill="#080e0a" stroke="#1a3820" stroke-width="1"/>
+<rect x="90" y="1210" width="640" height="3" rx="2" fill="#4acc88"/>
+<text class="diag-lbl-layer" x="110" y="1224" fill="#289a55">06 — observabilidad &amp; seguridad</text>
+<text class="diag-lbl-sub"   x="410" y="1238" text-anchor="middle" fill="#289a55">Prometheus  ·  Grafana  ·  Logs  ·  gitleaks en CI  ·  GitHub Secrets / OIDC</text>
+</svg>
+    </div>
+
+    <div class="diag-legend">
+      <div class="diag-leg">
+        <div class="diag-leg-line" style="background:#00d4aa"></div>petición / ida
+      </div>
+      <div class="diag-leg">
+        <div class="diag-leg-line" style="background:linear-gradient(to right,#00d4aa 55%,transparent 55%) repeat-x;background-size:8px 2px"></div>respuesta / vuelta
+      </div>
+      <div class="diag-leg">
+        <div class="diag-leg-line" style="background:linear-gradient(to right,#f5a623 55%,transparent 55%) repeat-x;background-size:6px 2px"></div>reintento automático (NCT)
+      </div>
+      <div class="diag-leg">
+        <div class="diag-leg-line" style="background:linear-gradient(to right,#607080 55%,transparent 55%) repeat-x;background-size:5px 2px"></div>keepalive / heartbeat
+      </div>
+      <div class="diag-leg">
+        <div class="diag-leg-line" style="background:linear-gradient(to right,#4acc88 55%,transparent 55%) repeat-x;background-size:4px 2px"></div>scraping métricas
+      </div>
+    </div>
+  </section>
+
+
+  <!-- 9 — Flujo del Sistema -->
+  <section>
+    <div class="section-label">09 — Flujo del Sistema</div>
+    <h2>Flujo Completo de una Transacción</h2>
+    <p>A continuación se describe paso a paso cómo recorre el sistema una transacción desde que el actor la genera hasta que queda confirmada en la blockchain.</p>
+
+    <h3>Paso 1 — El actor envía la transacción</h3>
+    <p>El <strong>Cine</strong> o el <strong>Usuario</strong> interactúa con la <strong>Web UI</strong>, que construye el payload JSON y lo envía vía <code>POST /tx</code> a la <strong>REST API</strong>. La API devuelve inmediatamente un <code>202 Accepted</code> con un <code>txid</code>. La transacción todavía no está confirmada.</p>
+
+    <h3>Paso 2 — La API llama al NCT</h3>
+    <p>La REST API reenvía el payload al <strong>Nodo Coordinador de Tareas (NCT)</strong> mediante una llamada interna. Si el NCT no responde, la API <strong>reintenta hasta 3 veces con backoff exponencial</strong> antes de devolver un <code>503</code> al cliente.</p>
+
+    <h3>Paso 3 — El NCT valida la transacción</h3>
+    <p>El NCT consulta <strong>Redis</strong> para verificar dos condiciones según el tipo de transacción:</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">emision / autorizar_emisor</div>
+          <p class="feature-desc"><code>SISMEMBER emisores:authorized</code> — verifica que el <code>from</code> sea un cine autorizado. Si no lo es, rechaza con error.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">transferencia / canje</div>
+          <p class="feature-desc"><code>GET wallet:{from}:balance</code> — verifica que el usuario tenga saldo suficiente. Si no alcanza, rechaza con error.</p>
+        </div>
+      </div>
+    </div>
+    <p>Si la validación pasa, el NCT hace <code>LPUSH pool:pending</code> y la transacción queda encolada esperando ser incluida en un bloque.</p>
+
+    <h3>Paso 4 — El Pool forma un bloque y fragmenta el trabajo</h3>
+    <p>El <strong>Pool de Transacciones</strong> acumula transacciones pendientes hasta alcanzar el tamaño de bloque configurado. Luego forma el bloque con <code>prev_hash + txs + dificultad</code> y lo divide en rangos de nonce. Cada rango se publica como una tarea independiente en el exchange <code>mining.tasks</code> de <strong>RabbitMQ</strong>: los rangos más difíciles van a <code>tasks.gpu</code> y los más simples a <code>tasks.cpu</code>.</p>
+
+    <h3>Paso 5 — Los mineros compiten por el nonce</h3>
+    <p>Los <strong>Mineros GPU (CUDA)</strong> consumen tareas de <code>tasks.gpu</code> y los <strong>Mineros CPU</strong> de <code>tasks.cpu</code>, cada uno con <code>prefetch=1</code> para que no acaparen mensajes. Cada minero recorre su rango de nonces calculando <code>MD5(datos + nonce)</code> hasta encontrar uno cuyo hash empiece con el prefijo de dificultad requerido. Mientras tanto, cada minero envía un <strong>keepalive cada ~5 segundos</strong> al exchange <code>miners.keepalive</code> para que el Pool sepa cuántos GPU están activos. Si no hay GPU disponibles, el Pool reduce la dificultad del prefijo y Kubernetes escala pods CPU automáticamente mediante <strong>HPA</strong>.</p>
+
+    <h3>Paso 6 — El ganador publica el nonce</h3>
+    <p>El primer minero que encuentra un nonce válido publica el resultado en <code>mining.results</code> con un <strong>ACK manual</strong>. RabbitMQ descarta los demás rangos pendientes de ese bloque (TTL). Si el worker que encontró el nonce muere antes de hacer ACK, RabbitMQ hace <strong>nack + requeue</strong> automático y otro worker retoma el rango.</p>
+
+    <h3>Paso 7 — El NCT verifica y confirma el bloque</h3>
+    <p>El NCT recibe el nonce ganador desde <code>results.nct</code> y recalcula el hash localmente para verificar que <code>hash(datos + nonce) == prefijo</code>. Si la verificación pasa, ejecuta un <strong>MULTI/EXEC atómico en Redis</strong> que en una sola transacción:</p>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Escribe el bloque</div>
+          <p class="feature-desc"><code>RPUSH chain:blocks {hash}</code> y <code>HSET block:{hash} ...</code> con todos los campos del bloque.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Registra las transacciones</div>
+          <p class="feature-desc"><code>HSET tx:{txid} ...</code> para cada transacción del bloque y actualiza <code>wallet:{id}:txs</code>.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Actualiza los saldos</div>
+          <p class="feature-desc"><code>INCRBY</code> / <code>DECRBY</code> sobre <code>wallet:{id}:balance</code> de forma atómica.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-bar"></div>
+        <div class="feature-content">
+          <div class="feature-title">Actualiza el estado global</div>
+          <p class="feature-desc"><code>HSET chain:meta height ... last_hash ...</code> y elimina <code>mining:current</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p>Si Redis devuelve <code>nil</code> (otro NCT escribió primero), el MULTI/EXEC falla y el <strong>NCT reintenta</strong> leyendo el nuevo estado de la cadena antes de volver a intentar confirmar. El retry lo hace el NCT, no Redis.</p>
+    </div>
+
+    <h3>Paso 8 — El actor consulta la confirmación</h3>
+    <p>El usuario puede hacer <code>GET /tx/:txid</code> en cualquier momento. Si la transacción ya fue incluida en un bloque, Redis devuelve el <code>block_hash</code> y la <code>height</code> y la API responde <code>200 OK { status: confirmed }</code>. Si todavía está en el pool, responde <code>200 OK { status: pending }</code>.</p>
+
+    <h3>Observabilidad continua</h3>
+    <p><strong>Prometheus</strong> scrapea métricas de todos los servicios (hashes/s, latencia de bloques, tamaño del pool, workers activos) y <strong>Grafana</strong> las visualiza en tiempo real. Todos los servicios escriben logs en memoria y en disco, y el pipeline de CI incluye <strong>gitleaks</strong> para evitar que se expongan credenciales.</p>
+
+  </section>
+
+  <footer>
+    <span>PopToken · Blockchain Distribuida y CUDA</span>
+    <span>Junio 2026</span>
+  </footer>
+
+</div>
+
+
+</body></html>

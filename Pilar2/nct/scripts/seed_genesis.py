@@ -8,6 +8,7 @@ def main():
     genesis = {
         "type": "genesis",
         "previous_hash": "0" * 16,
+        "difficulty": "00",
         "emisores_autorizados": json.dumps(["Hoyts_123", "cinepolis_456", "cinemark_789"]),
         "quorum_requerido": 3,
         "tokens_por_entrada": 10,

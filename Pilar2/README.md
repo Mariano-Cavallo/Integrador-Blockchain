@@ -9,9 +9,9 @@ FastAPI + Redis. Ver el caso de uso en [../Propuesta/Propuesta.md](../Propuesta/
 |---|---|---|
 | 1 | Validación de transacciones + Redis | Hecho |
 | 2 | `pool:pending` + formación de bloque | Hecho |
-| 3 | RabbitMQ — publicar tarea PoW | Pendiente |
-| 4 | Conectar minero del Pilar 1 como worker | Pendiente |
-| 5 | Recibir nonce ganador + MULTI/EXEC | Pendiente |
+| 3 | RabbitMQ — publicar tarea PoW | Hecho |
+| 4 | Conectar minero del Pilar 1 como worker | Hecho |
+| 5 | Recibir nonce ganador + MULTI/EXEC | Hecho |
 | 6 | Pool de transacciones (P5) — fragmentación + HPA | Pendiente |
 | 7 | REST API completa + Web UI | Pendiente |
 
@@ -31,11 +31,15 @@ las txs pendientes, las encadena al bloque anterior mediante hashes y vacía el 
 | `nct/app/redis_client.py` | Crea el cliente de conexión a Redis. |
 | `nct/app/balances.py` | Calcula el saldo de una wallet recorriendo la cadena (modelo UTXO: recibido − enviado). Incluye `pool:pending` para evitar doble gasto. |
 | `nct/app/validation.py` | Junta todo: valida estructura (models) + saldo (balances) y, si pasa, encola la tx en `pool:pending`. |
-| `nct/app/chain.py` | Lógica de la cadena: calcula el hash de un bloque (MD5, determinístico con `sort_keys`), lee el hash del último bloque y forma un bloque nuevo con todo el pool, encadenándolo al anterior. |
-| `nct/app/main.py` | API HTTP (FastAPI): `POST /tx`, `POST /block`, `GET /balance/{wallet}`, `GET /health`. |
-| `nct/scripts/seed_genesis.py` | Siembra el bloque génesis en Redis (emisores autorizados, quórum, tokens por entrada). |
-| `nct/tests/` | Tests con pytest (usan `fakeredis`, no tocan el Redis real): validación de estructura, de saldo, anti-doble-gasto y formación de bloque (sube height, vacía pool, encadena al génesis). |
-| `docker-compose.yml` | Levanta Redis con persistencia AOF (contenedor `PopToken-redis`). |
+| `nct/app/chain.py` | Lógica de la cadena: calcula el hash de un bloque (MD5, determinístico con `sort_keys`), arma `cadena_pow` (bloque serializado sin nonce ni block_hash, lo que el minero hashea) y forma el bloque tomando todo el pool, encadenándolo al anterior y publicando la tarea de PoW. |
+| `nct/app/queue.py` | Conexión a RabbitMQ (pika) y `publicar_tarea`: declara la cola `mining_tasks` (durable) y publica la tarea de minado como mensaje persistente. |
+| `nct/app/sealer.py` | `sellar_bloque`: recupera el bloque pendiente, **verifica el PoW** (recalcula el hash y chequea dificultad + match), y sella atómicamente (`MULTI/EXEC`): mueve a `block:{i}`, sube height, borra pending, vacía pool. |
+| `nct/app/results_consumer.py` | Consumidor en background (thread daemon) que escucha `mining_results` y llama a `sellar_bloque` por cada nonce ganador. Arranca con FastAPI. |
+| `nct/app/main.py` | API HTTP (FastAPI): `POST /tx`, `POST /block`, `GET /balance/{wallet}`, `GET /health`. Al startup arranca el consumidor de resultados. |
+| `nct/scripts/seed_genesis.py` | Siembra el bloque génesis en Redis (emisores autorizados, quórum, tokens por entrada, dificultad del PoW). |
+| `worker/` | Mineros que consumen `mining_tasks` y publican en `mining_results`. `common/consumer.py` (lógica compartida `run_worker(minar)`), `cpu/miner.py` (Python), `gpu/miner.py` (invoca el binario CUDA del Pilar 1). Dockerizado, escalable con `--scale worker-cpu=N`. |
+| `nct/tests/` | Tests con pytest (usan `fakeredis`, no tocan el Redis real): validación de estructura, de saldo, anti-doble-gasto, formación de bloque y `cadena_pow` determinística. |
+| `docker-compose.yml` | Levanta Redis (persistencia AOF, `PopToken-redis`), RabbitMQ (`PopToken-rabbitmq`, UI en :15672) y el `worker-cpu` (escalable). |
 
 ### Decisiones de diseño
 
@@ -46,6 +50,12 @@ las txs pendientes, las encadena al bloque anterior mediante hashes y vacía el 
 - **Bloque**: un bloque agrupa todas las txs pendientes (no una sola) → el costo del PoW se paga una vez por paquete.
 - **Encadenamiento**: el `previous_hash` del bloque 1 es el hash MD5 del génesis (no ceros); cada bloque referencia el hash del anterior → inmutabilidad.
 - **Hash determinístico**: se serializa con `json.dumps(sort_keys=True)` y se excluye `block_hash`, para que sea reproducible (necesario para el PoW del minero).
+- **PoW distribuido**: el NCT no mina; publica la tarea (`chain`, `prefix`, rango de nonce) en RabbitMQ (`mining_tasks`) para que los mineros del Pilar 1 compitan. El minero busca un nonce tal que `MD5(chain + nonce)` empiece con el prefijo (`difficulty`, leído del génesis).
+- **Verificación de PoW (consenso)**: el NCT no confía en el worker; recalcula el hash con el nonce reportado y confirma que cumple la dificultad antes de sellar. Barato verificar, caro producir.
+- **Sellado atómico (`MULTI/EXEC`)**: guardar el bloque + subir height + borrar pending + vaciar pool ocurren todo-o-nada, para no quedar en estado corrupto si el NCT se cae a mitad.
+- **Hash sobre la representación de Redis**: tanto al publicar la tarea como al verificar, el hash se calcula sobre el bloque tal como sale de Redis (todos los campos string). Si se hashea el dict en memoria (con int) en un lado y el de Redis (string) en el otro, los hashes no coinciden y la verificación falla.
+- **Idempotencia de duplicados**: si llegan varios nonces para el mismo bloque, el primero lo sella y borra el pending; los siguientes no encuentran el pending y se descartan.
+- **`cadena_pow` excluye el nonce**: porque el nonce es justo lo que el minero varía; la "cadena fija" es todo el bloque menos `nonce` y `block_hash`.
 
 ## Cómo ejecutar
 

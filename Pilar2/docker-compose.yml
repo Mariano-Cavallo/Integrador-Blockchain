@@ -13,5 +13,31 @@ services:
       timeout: 3s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: PopToken-rabbitmq
+    ports:
+      - "5672:5672"     # puerto AMQP (lo usa pika)
+      - "15672:15672"   # UI web de administracion
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Worker CPU: consume tareas de mining_tasks, mina y publica en mining_results.
+  # Escalable con --scale worker-cpu=N (varios mineros compitiendo por las tareas).
+  worker-cpu:
+    build:
+      context: ./worker            # ve common/, cpu/, requirements.txt
+      dockerfile: cpu/Dockerfile
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/   # host = nombre del servicio
+      LOG_FILE: /var/log/worker.log
+    depends_on:
+      rabbitmq:
+        condition: service_healthy   # espera a que RabbitMQ este listo
+    restart: unless-stopped          # si el worker se cae, lo reinicia
+
 volumes:
   redis-data:

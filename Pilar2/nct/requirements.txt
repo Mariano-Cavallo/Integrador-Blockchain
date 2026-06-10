@@ -4,3 +4,4 @@ redis
 pydantic
 pytest
 fakeredis 
+pika

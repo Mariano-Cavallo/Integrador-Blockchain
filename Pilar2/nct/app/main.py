@@ -3,8 +3,15 @@ from app.redis_client import get_redis
 from app.validation import validar_tx
 from app.balances import calcular_saldo
 from app.chain import formar_bloque
+from app.results_consumer import iniciar_consumidor
 
 app = FastAPI(title="NCT PopToken")
+
+
+
+@app.on_event("startup")
+def startup():
+    iniciar_consumidor()
 
 
 @app.post("/tx")

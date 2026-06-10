@@ -3,6 +3,11 @@ import pytest
 import fakeredis
 from app import keys
 
+@pytest.fixture(autouse=True)
+def no_rabbitmq(monkeypatch):
+    # en tests, publicar_tarea no hace nada (no toca RabbitMQ)
+    monkeypatch.setattr("app.chain.publicar_tarea", lambda task: None)
+
 
 @pytest.fixture
 def r():
@@ -11,6 +16,7 @@ def r():
     cliente.hset(keys.GENESIS, mapping={
         "type": "genesis",
         "previous_hash": "0" * 16,
+        "difficulty": "00",
         "emisores_autorizados": json.dumps(["Hoyts_0xA1b2"]),
         "quorum_requerido": 1,
         "tokens_por_entrada": 10,

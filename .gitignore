@@ -1,0 +1,44 @@
+# === Secrets / entorno (NO commitear — requisito del integrador) ===
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+service-account*.json
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.cache/
+
+# === Logs (se persisten en disco pero no se versionan) ===
+logs/*.log
+*.log
+
+# === CUDA / C++ build artifacts (Pilar 1) ===
+*.exe
+*.exp
+*.lib
+*.obj
+*.o
+
+# === IDE / OS ===
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

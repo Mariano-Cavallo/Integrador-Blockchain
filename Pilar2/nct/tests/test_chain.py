@@ -1,0 +1,39 @@
+from app.chain import formar_bloque, hash_bloque
+from app.validation import validar_tx
+from app.balances import calcular_saldo
+from app import keys
+
+
+def test_pool_vacio_no_forma_bloque(r):
+    # sin txs pendientes, no hay nada que minar
+    assert formar_bloque(r) is None
+
+
+def test_formar_bloque_sube_height_y_vacia_pool(r):
+    validar_tx({"type": "emision", "from": "Hoyts_0xA1b2", "to": "Alice",
+                "tokens": 10, "motivo": "compra", "pelicula": "Dune",
+                "timestamp": "2026-06-10T10:00:00Z"}, r)
+    bloque = formar_bloque(r)
+
+    assert bloque is not None
+    assert bloque["index"] == 1
+    assert int(r.get(keys.CHAIN_HEIGHT)) == 1          # height subio
+    assert r.lrange(keys.POOL_PENDING, 0, -1) == []    # pool vacio
+
+
+def test_saldo_se_mantiene_tras_formar_bloque(r):
+    validar_tx({"type": "emision", "from": "Hoyts_0xA1b2", "to": "Alice",
+                "tokens": 10, "motivo": "compra", "pelicula": "Dune",
+                "timestamp": "2026-06-10T10:00:00Z"}, r)
+    assert calcular_saldo("Alice", r) == 10   # en el pool
+    formar_bloque(r)
+    assert calcular_saldo("Alice", r) == 10   # ahora en el bloque, mismo saldo
+
+
+def test_primer_bloque_encadena_al_genesis(r):
+    validar_tx({"type": "emision", "from": "Hoyts_0xA1b2", "to": "Alice",
+                "tokens": 10, "motivo": "compra", "pelicula": "Dune",
+                "timestamp": "2026-06-10T10:00:00Z"}, r)
+    bloque = formar_bloque(r)
+    genesis = r.hgetall(keys.GENESIS)
+    assert bloque["previous_hash"] == hash_bloque(genesis)   # no los ceros

@@ -55,11 +55,6 @@ def formar_bloque(r):
     return task
 
 
-def cadena_pow(bloque: dict) -> str:
-    # parte fija del bloque que el minero hashea (sin nonce ni block_hash)
-    base = {k: v for k, v in bloque.items() if k not in ("nonce", "block_hash")}
-    return json.dumps(base, sort_keys=True)
-
 def leer_bloque(r, index):
     # devuelve el bloque {index} como dict, o None si no existe
     b = r.hgetall(keys.block(index))

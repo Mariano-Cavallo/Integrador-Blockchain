@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PopToken — Explorador</title>
+  <style>
+    :root {
+      --bg: #0f1419; --panel: #1a2129; --border: #2a343f;
+      --txt: #e6edf3; --muted: #8b949e; --accent: #f5a623;
+      --ok: #3fb950; --err: #f85149; --chip: #21304a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--txt);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      line-height: 1.5;
+    }
+    header {
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 14px;
+    }
+    header h1 { font-size: 20px; margin: 0; }
+    header .logo { font-size: 26px; }
+    .bar { margin-left: auto; display: flex; gap: 10px; align-items: center; font-size: 13px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    .dot.ok { background: var(--ok); } .dot.down { background: var(--err); }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px;
+    }
+    .panel h2 { margin: 0 0 14px; font-size: 15px; color: var(--accent); text-transform: uppercase; letter-spacing: .5px; }
+    .stats { display: flex; gap: 28px; }
+    .stat .num { font-size: 30px; font-weight: 700; }
+    .stat .lbl { font-size: 12px; color: var(--muted); }
+    label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    input, select, button {
+      width: 100%; padding: 9px 11px; border-radius: 7px;
+      border: 1px solid var(--border); background: #0d1117; color: var(--txt); font-size: 14px;
+    }
+    button {
+      background: var(--accent); color: #1a1a1a; font-weight: 600;
+      border: none; cursor: pointer; margin-top: 12px; width: auto; padding: 9px 18px;
+    }
+    button.secondary { background: var(--chip); color: var(--txt); }
+    button:hover { opacity: .9; }
+    .row { display: flex; gap: 10px; }
+    .row > * { flex: 1; }
+    .msg { margin-top: 10px; font-size: 13px; min-height: 18px; }
+    .msg.ok { color: var(--ok); } .msg.err { color: var(--err); }
+    .block {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+    }
+    .block .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .block .idx { background: var(--accent); color: #1a1a1a; font-weight: 700; border-radius: 6px; padding: 2px 9px; font-size: 13px; }
+    .hash { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); word-break: break-all; }
+    .tx { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-top: 6px; font-size: 13px; }
+    .tx .type { color: var(--accent); font-weight: 600; }
+    .pill { font-size: 11px; background: var(--chip); border-radius: 10px; padding: 1px 8px; color: var(--muted); }
+    .empty { color: var(--muted); font-style: italic; font-size: 13px; }
+    .genesis { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">🎬</span>
+    <h1>PopToken — Explorador de la Blockchain</h1>
+    <div class="bar" id="health">
+      <span><span class="dot down" id="dot-redis"></span>Redis</span>
+      <span><span class="dot down" id="dot-rabbit"></span>RabbitMQ</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Estado de la red -->
+    <div class="panel">
+      <h2>Estado de la red</h2>
+      <div class="stats">
+        <div class="stat"><div class="num" id="st-height">–</div><div class="lbl">Altura de la cadena</div></div>
+        <div class="stat"><div class="num" id="st-pending">–</div><div class="lbl">Tx pendientes (pool)</div></div>
+      </div>
+      <button class="secondary" onclick="formarBloque()">⛏️ Formar bloque (minar pendientes)</button>
+      <div class="msg" id="msg-block"></div>
+    </div>
+
+    <div class="grid">
+      <!-- Enviar transacción -->
+      <div class="panel">
+        <h2>Enviar transacción</h2>
+        <label>Tipo</label>
+        <select id="tx-type" onchange="renderTxForm()">
+          <option value="emision">Emisión (cine acuña)</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="canje">Canje</option>
+        </select>
+        <div id="tx-fields"></div>
+        <button onclick="enviarTx()">Enviar</button>
+        <div class="msg" id="msg-tx"></div>
+      </div>
+
+      <!-- Consultar saldo -->
+      <div class="panel">
+        <h2>Consultar saldo</h2>
+        <label>Wallet</label>
+        <input id="bal-wallet" placeholder="ej. Alice">
+        <button onclick="consultarSaldo()">Consultar</button>
+        <div class="msg" id="msg-bal"></div>
+      </div>
+    </div>
+
+    <!-- Explorador de bloques -->
+    <div class="panel">
+      <h2>Cadena de bloques</h2>
+      <div id="chain"></div>
+    </div>
+  </main>
+
+  <script>
+    const API = ""; // mismo origen
+
+    async function api(path, opts) {
+      const res = await fetch(API + path, opts);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.detail || res.statusText);
+      return body;
+    }
+
+    // ---- Estado / salud ----
+    async function refreshStatus() {
+      try {
+        const s = await api("/status");
+        document.getElementById("st-height").textContent = s.height;
+        document.getElementById("st-pending").textContent = s.pending;
+      } catch (e) { /* silencio */ }
+      try {
+        const h = await api("/health");
+        setDot("dot-redis", h.redis);
+        setDot("dot-rabbit", h.rabbitmq);
+      } catch (e) {
+        setDot("dot-redis", "down"); setDot("dot-rabbit", "down");
+      }
+    }
+    function setDot(id, st) {
+      document.getElementById(id).className = "dot " + (st === "ok" ? "ok" : "down");
+    }
+
+    // ---- Formulario de tx dinámico según tipo ----
+    function renderTxForm() {
+      const t = document.getElementById("tx-type").value;
+      const f = document.getElementById("tx-fields");
+      let html = `
+        <label>From (origen)</label><input id="f-from" placeholder="${t === 'emision' ? 'cine emisor' : 'wallet origen'}">
+        <label>To (destino)</label><input id="f-to" placeholder="wallet destino">
+        <label>Tokens</label><input id="f-tokens" type="number" value="10">`;
+      if (t === "emision") {
+        html += `<div class="row"><div><label>Motivo</label><input id="f-motivo" value="compra_entrada"></div>
+                 <div><label>Película</label><input id="f-pelicula" value="Dune"></div></div>`;
+      } else if (t === "canje") {
+        html += `<label>Beneficio</label><input id="f-beneficio" value="entrada_gratis">`;
+      }
+      f.innerHTML = html;
+    }
+
+    async function enviarTx() {
+      const t = document.getElementById("tx-type").value;
+      const tx = {
+        type: t,
+        from: val("f-from"), to: val("f-to"),
+        tokens: parseInt(val("f-tokens"), 10),
+        timestamp: new Date().toISOString(),
+      };
+      if (t === "emision") { tx.motivo = val("f-motivo"); tx.pelicula = val("f-pelicula"); }
+      if (t === "canje") { tx.beneficio = val("f-beneficio"); }
+      const m = document.getElementById("msg-tx");
+      try {
+        const r = await api("/tx", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(tx) });
+        m.className = "msg ok"; m.textContent = "✓ Transacción aceptada y encolada.";
+        refreshStatus();
+      } catch (e) {
+        m.className = "msg err"; m.textContent = "✗ " + e.message;
+      }
+    }
+
+    async function consultarSaldo() {
+      const w = val("bal-wallet");
+      const m = document.getElementById("msg-bal");
+      if (!w) { m.className = "msg err"; m.textContent = "Ingresá una wallet."; return; }
+      try {
+        const r = await api("/balance/" + encodeURIComponent(w));
+        m.className = "msg ok"; m.textContent = `Saldo de ${r.wallet}: ${r.saldo} tokens`;
+      } catch (e) { m.className = "msg err"; m.textContent = "✗ " + e.message; }
+    }
+
+    async function formarBloque() {
+      const m = document.getElementById("msg-block");
+      try {
+        const r = await api("/block", { method: "POST" });
+        m.className = "msg ok";
+        m.textContent = `✓ Bloque ${r.block_index ?? ""} formado y tarea de PoW publicada. Esperá a que un minero lo selle...`;
+        setTimeout(() => { refreshStatus(); refreshChain(); }, 1500);
+      } catch (e) { m.className = "msg err"; m.textContent = "✗ " + e.message; }
+    }
+
+    // ---- Explorador de la cadena ----
+    async function refreshChain() {
+      const cont = document.getElementById("chain");
+      try {
+        const c = await api("/chain");
+        let html = renderGenesis();
+        if (!c.blocks || c.blocks.length === 0) {
+          html += `<p class="empty">Todavía no hay bloques minados. Enviá transacciones y formá un bloque.</p>`;
+        } else {
+          html += c.blocks.map(renderBlock).join("");
+        }
+        cont.innerHTML = html;
+      } catch (e) {
+        cont.innerHTML = `<p class="empty">No se pudo cargar la cadena: ${e.message}</p>`;
+      }
+    }
+    function renderGenesis() {
+      return `<div class="block genesis"><div class="head"><span class="idx">G</span><strong>Bloque Génesis</strong></div>
+              <div class="hash">El origen de la cadena — define emisores autorizados y reglas.</div></div>`;
+    }
+    function renderBlock(b) {
+      const txs = (b.transactions || []).map(tx => `
+        <div class="tx"><span class="type">${tx.type}</span>
+        ${tx.from ? `· ${tx.from} → ${tx.to}` : ""} ${tx.tokens != null ? `· <b>${tx.tokens}</b> tokens` : ""}</div>`).join("");
+      return `<div class="block">
+        <div class="head"><span class="idx">#${b.index}</span>
+          <span class="pill">nonce ${b.nonce}</span>
+          <span class="pill">${(b.transactions||[]).length} tx</span></div>
+        <div class="hash">hash: ${b.block_hash}</div>
+        <div class="hash">prev: ${b.previous_hash}</div>
+        ${txs}
+      </div>`;
+    }
+
+    function val(id) { return document.getElementById(id).value.trim(); }
+
+    // ---- init ----
+    renderTxForm();
+    refreshStatus();
+    refreshChain();
+    setInterval(refreshStatus, 4000);   // refresca estado cada 4s
+  </script>
+</body>
+</html>

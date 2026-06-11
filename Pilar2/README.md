@@ -13,7 +13,7 @@ FastAPI + Redis. Ver el caso de uso en [../Propuesta/Propuesta.md](../Propuesta/
 | 4 | Conectar minero del Pilar 1 como worker | Hecho |
 | 5 | Recibir nonce ganador + MULTI/EXEC | Hecho |
 | 6 | Pool de transacciones (P5) — fragmentación + HPA | Pendiente |
-| 7 | REST API completa + Web UI | Pendiente |
+| 7 | REST API completa + Web UI | Hecho |
 
 ## Pasos 1 y 2 — Validación de txs y formación de bloque (resumen)
 
@@ -30,12 +30,13 @@ las txs pendientes, las encadena al bloque anterior mediante hashes y vacía el 
 | `nct/app/config.py` | Lee `REDIS_URL` del entorno (con default local). |
 | `nct/app/redis_client.py` | Crea el cliente de conexión a Redis. |
 | `nct/app/balances.py` | Calcula el saldo de una wallet recorriendo la cadena (modelo UTXO: recibido − enviado). Incluye `pool:pending` para evitar doble gasto. |
-| `nct/app/validation.py` | Junta todo: valida estructura (models) + saldo (balances) y, si pasa, encola la tx en `pool:pending`. |
+| `nct/app/validation.py` | Valida la tx en orden: estructura (models) → emisor autorizado (solo emisión, contra el génesis) → anti-duplicado (`tx_id` MD5 contra el set `seen:tx`) → saldo (transferencia/canje). Si pasa, encola en `pool:pending` y registra el `tx_id`. |
 | `nct/app/chain.py` | Lógica de la cadena: calcula el hash de un bloque (MD5, determinístico con `sort_keys`), arma `cadena_pow` (bloque serializado sin nonce ni block_hash, lo que el minero hashea) y forma el bloque tomando todo el pool, encadenándolo al anterior y publicando la tarea de PoW. |
 | `nct/app/queue.py` | Conexión a RabbitMQ (pika) y `publicar_tarea`: declara la cola `mining_tasks` (durable) y publica la tarea de minado como mensaje persistente. |
 | `nct/app/sealer.py` | `sellar_bloque`: recupera el bloque pendiente, **verifica el PoW** (recalcula el hash y chequea dificultad + match), y sella atómicamente (`MULTI/EXEC`): mueve a `block:{i}`, sube height, borra pending, vacía pool. |
 | `nct/app/results_consumer.py` | Consumidor en background (thread daemon) que escucha `mining_results` y llama a `sellar_bloque` por cada nonce ganador. Arranca con FastAPI. |
-| `nct/app/main.py` | API HTTP (FastAPI): `POST /tx`, `POST /block`, `GET /balance/{wallet}`, `GET /health`. Al startup arranca el consumidor de resultados. |
+| `nct/app/main.py` | API HTTP (FastAPI). Escritura: `POST /tx`, `POST /block`. Lectura: `GET /chain`, `/block/{i}`, `/pool`, `/status`, `/balance/{wallet}`, `/health` (Redis + RabbitMQ). Sirve la UI en `/ui`. Al startup arranca el consumidor de resultados. |
+| `nct/static/index.html` | Web UI (HTML+JS vanilla): explorador de bloques, formulario de tx, consulta de saldo, botón de formar bloque y semáforos de salud. Servida por FastAPI en `/ui`. |
 | `nct/scripts/seed_genesis.py` | Siembra el bloque génesis en Redis (emisores autorizados, quórum, tokens por entrada, dificultad del PoW). |
 | `worker/` | Mineros que consumen `mining_tasks` y publican en `mining_results`. `common/consumer.py` (lógica compartida `run_worker(minar)`), `cpu/miner.py` (Python), `gpu/miner.py` (invoca el binario CUDA del Pilar 1). Dockerizado, escalable con `--scale worker-cpu=N`. |
 | `nct/tests/` | Tests con pytest (usan `fakeredis`, no tocan el Redis real): validación de estructura, de saldo, anti-doble-gasto, formación de bloque y `cadena_pow` determinística. |

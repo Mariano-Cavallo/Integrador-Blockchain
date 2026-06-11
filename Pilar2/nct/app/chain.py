@@ -60,5 +60,24 @@ def cadena_pow(bloque: dict) -> str:
     base = {k: v for k, v in bloque.items() if k not in ("nonce", "block_hash")}
     return json.dumps(base, sort_keys=True)
 
+def leer_bloque(r, index):
+    # devuelve el bloque {index} como dict, o None si no existe
+    b = r.hgetall(keys.block(index))
+    if not b:
+        return None
+    b["transactions"] = json.loads(b["transactions"])   # de-serializar las txs
+    return b
+
+def leer_cadena(r):
+    # genesis + todos los bloques confirmados, en orden
+    altura = int(r.get(keys.CHAIN_HEIGHT) or 0)
+    bloques = [leer_bloque(r, i) for i in range(1, altura + 1)]
+    return bloques
+
+def leer_pool(r):
+    # txs pendientes (aun sin minar)
+    return [json.loads(t) for t in r.lrange(keys.POOL_PENDING, 0, -1)]
+
+
 def block_pending(index):
     return f"block:pending:{index}"

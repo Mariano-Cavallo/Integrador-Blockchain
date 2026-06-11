@@ -20,8 +20,8 @@ ejemplos de post /tx para probar con fastAPI
 
 {
   "type": "emision",
-  "from": "Hoyts_0xA1b2",
-  "to": "Alice",
+  "from": "Hoyts_123",
+  "to": "pepe",
   "tokens": 10,
   "motivo": "compra_entrada",
   "pelicula": "Dune",

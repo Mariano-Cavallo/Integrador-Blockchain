@@ -28,6 +28,7 @@ htmlcov/
 # === Logs (se persisten en disco pero no se versionan) ===
 logs/*.log
 *.log
+nct.log
 
 # === CUDA / C++ build artifacts (Pilar 1) ===
 *.exe

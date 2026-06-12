@@ -1,11 +1,14 @@
 import threading
 import json
+import logging
 import pika
 from app.config import RABBITMQ_URL
 from app.redis_client import get_redis
 from app.sealer import sellar_bloque
 
 MINING_RESULTS = "mining_results"
+log = logging.getLogger("nct")
+
 
 def _consumir():
     r = get_redis()
@@ -17,9 +20,8 @@ def _consumir():
     def callback(ch, method, props, body):
         resultado = json.loads(body)
         sellado = sellar_bloque(resultado, r)
-        #loggear resultado
-        print(f"[sealer] block {resultado['block_index']}: sellado={sellado}")
-
+        log.info("Bloque %s sellado=%s", resultado["block_index"], sellado)
+        
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     canal.basic_consume(queue=MINING_RESULTS, on_message_callback=callback)

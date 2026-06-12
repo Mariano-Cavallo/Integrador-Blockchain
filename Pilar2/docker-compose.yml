@@ -39,5 +39,38 @@ services:
         condition: service_healthy   # espera a que RabbitMQ este listo
     restart: unless-stopped          # si el worker se cae, lo reinicia
 
+  # API del NCT (FastAPI + UI). No corre el consumidor (ese es nct-consumer).
+  nct-api:
+    build: ./nct
+    container_name: PopToken-nct-api
+    ports:
+      - "8888:8888"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      LOG_FILE: /var/log/nct.log
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Consumidor de mining_results: sella bloques. Misma imagen, distinto comando.
+  nct-consumer:
+    build: ./nct
+    container_name: PopToken-nct-consumer
+    command: ["python", "-m", "scripts.run_consumer"]
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      LOG_FILE: /var/log/nct-consumer.log
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   redis-data:

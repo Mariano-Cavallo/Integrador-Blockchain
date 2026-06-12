@@ -39,8 +39,10 @@ las txs pendientes, las encadena al bloque anterior mediante hashes y vacía el 
 | `nct/static/index.html` | Web UI (HTML+JS vanilla): explorador de bloques, formulario de tx, consulta de saldo, botón de formar bloque y semáforos de salud. Servida por FastAPI en `/ui`. |
 | `nct/scripts/seed_genesis.py` | Siembra el bloque génesis en Redis (emisores autorizados, quórum, tokens por entrada, dificultad del PoW). |
 | `worker/` | Mineros que consumen `mining_tasks` y publican en `mining_results`. `common/consumer.py` (lógica compartida `run_worker(minar)`), `cpu/miner.py` (Python), `gpu/miner.py` (invoca el binario CUDA del Pilar 1). Dockerizado, escalable con `--scale worker-cpu=N`. |
-| `nct/tests/` | Tests con pytest (usan `fakeredis`, no tocan el Redis real): validación de estructura, de saldo, anti-doble-gasto, formación de bloque y `cadena_pow` determinística. |
-| `docker-compose.yml` | Levanta Redis (persistencia AOF, `PopToken-redis`), RabbitMQ (`PopToken-rabbitmq`, UI en :15672) y el `worker-cpu` (escalable). |
+| `nct/Dockerfile` + `nct/scripts/run_consumer.py` | Imagen del NCT. La misma imagen corre como API (`uvicorn`) o como consumidor (`run_consumer` → `_consumir` en primer plano), según el `command`. |
+| `nct/app/logging_config.py` | Configura logging a consola + archivo (`LOG_FILE`), para NCT y consumidor. |
+| `nct/tests/` | Tests con pytest (usan `fakeredis`, no tocan el Redis real): validación de estructura, saldo, anti-doble-gasto, emisor autorizado, anti-duplicado, formación de bloque y sellado (PoW válido/inválido/duplicado). |
+| `docker-compose.yml` | Levanta toda la plataforma: Redis (AOF), RabbitMQ (UI :15672), `worker-cpu` (escalable con `--scale`), `nct-api` (:8888) y `nct-consumer` (sella bloques). |
 
 ### Decisiones de diseño
 
@@ -48,6 +50,7 @@ las txs pendientes, las encadena al bloque anterior mediante hashes y vacía el 
 - **`emision` acuña tokens** (no descuenta al emisor); `transferencia` y `canje` suman al destino y restan al origen.
 - **Anti-doble-gasto**: el saldo cuenta también las txs en `pool:pending`.
 - Las funciones reciben el cliente Redis por parámetro → permite testear con `fakeredis`.
+- **NCT en 2 servicios**: la API (`nct-api`) y el consumidor de resultados (`nct-consumer`) corren por separado, compartiendo imagen. Desacopla: si el consumidor se cae no tumba la API, y cada uno escala independiente. El consumidor ya NO arranca en el startup de FastAPI.
 - **Bloque**: un bloque agrupa todas las txs pendientes (no una sola) → el costo del PoW se paga una vez por paquete.
 - **Encadenamiento**: el `previous_hash` del bloque 1 es el hash MD5 del génesis (no ceros); cada bloque referencia el hash del anterior → inmutabilidad.
 - **Hash determinístico**: se serializa con `json.dumps(sort_keys=True)` y se excluye `block_hash`, para que sea reproducible (necesario para el PoW del minero).

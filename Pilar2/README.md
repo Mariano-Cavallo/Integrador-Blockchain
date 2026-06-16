@@ -12,7 +12,7 @@ FastAPI + Redis. Ver el caso de uso en [../Propuesta/Propuesta.md](../Propuesta/
 | 3 | RabbitMQ — publicar tarea PoW | Hecho |
 | 4 | Conectar minero del Pilar 1 como worker | Hecho |
 | 5 | Recibir nonce ganador + MULTI/EXEC | Hecho |
-| 6 | Pool de transacciones (P5) — fragmentación + HPA | Pendiente |
+| 6 | Pool de transacciones (P5) — fragmentación | Hecho (HPA → Pilar 3) |
 | 7 | REST API completa + Web UI | Hecho |
 
 ## Pasos 1 y 2 — Validación de txs y formación de bloque (resumen)
@@ -51,6 +51,7 @@ las txs pendientes, las encadena al bloque anterior mediante hashes y vacía el 
 - **Anti-doble-gasto**: el saldo cuenta también las txs en `pool:pending`.
 - Las funciones reciben el cliente Redis por parámetro → permite testear con `fakeredis`.
 - **NCT en 2 servicios**: la API (`nct-api`) y el consumidor de resultados (`nct-consumer`) corren por separado, compartiendo imagen. Desacopla: si el consumidor se cae no tumba la API, y cada uno escala independiente. El consumidor ya NO arranca en el startup de FastAPI.
+- **Fragmentación del PoW**: al formar el bloque se publican `N_FRAGMENTOS` tareas con sub-rangos de nonce distintos (mismo `chain`/bloque). Varios workers minan el mismo bloque en paralelo, cada uno su rango. El que encuentra el nonce publica el resultado; los demás terminan su rango sin solución (ack silencioso, sin publicar). No hay cancelación: los resultados tardíos se descartan porque el bloque ya no está pendiente.
 - **Bloque**: un bloque agrupa todas las txs pendientes (no una sola) → el costo del PoW se paga una vez por paquete.
 - **Encadenamiento**: el `previous_hash` del bloque 1 es el hash MD5 del génesis (no ceros); cada bloque referencia el hash del anterior → inmutabilidad.
 - **Hash determinístico**: se serializa con `json.dumps(sort_keys=True)` y se excluye `block_hash`, para que sea reproducible (necesario para el PoW del minero).

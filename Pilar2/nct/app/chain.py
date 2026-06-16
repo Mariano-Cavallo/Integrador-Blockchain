@@ -1,5 +1,6 @@
 import hashlib
 import json
+from app.config import N_FRAGMENTOS
 from app import keys
 import datetime
 from app.queue import publicar_tarea
@@ -43,16 +44,22 @@ def formar_bloque(r):
 
     genesis = r.hgetall(keys.GENESIS)
     difficulty = genesis["difficulty"]
+    chain_hash = hash_bloque(bloque_redis)
 
-    task = {
-        "block_index": nuevo_index,
-        "chain": hash_bloque(bloque_redis),   # <-- hash de la version en Redis
-        "prefix": difficulty,
-        "nonce_min": 0,
-        "nonce_max": 10_000_000,
-    }
-    publicar_tarea(task)
-    return task
+    NONCE_MAX = 10_000_000
+    tam = NONCE_MAX // N_FRAGMENTOS
+    for i in range(N_FRAGMENTOS):
+        task = {
+            "block_index": nuevo_index,
+            "chain": chain_hash,
+            "prefix": difficulty,
+            "nonce_min": i * tam,
+            "nonce_max": (i + 1) * tam - 1,
+        }
+        publicar_tarea(task)
+
+    return {"block_index": nuevo_index, "fragmentos": N_FRAGMENTOS}
+
 
 
 def leer_bloque(r, index):

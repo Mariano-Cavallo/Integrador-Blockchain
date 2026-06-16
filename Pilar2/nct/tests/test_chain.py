@@ -2,6 +2,8 @@ from app.chain import formar_bloque, hash_bloque
 from app.validation import validar_tx
 from app.balances import calcular_saldo
 from app import keys
+from app.config import N_FRAGMENTOS
+
 
 
 def test_pool_vacio_no_forma_bloque(r):
@@ -13,14 +15,14 @@ def test_formar_bloque_crea_pending_y_publica_tarea(r):
     validar_tx({"type": "emision", "from": "Hoyts_0xA1b2", "to": "Alice",
                 "tokens": 10, "motivo": "compra", "pelicula": "Dune",
                 "timestamp": "2026-06-10T10:00:00Z"}, r)
-    tarea = formar_bloque(r)
+    resumen = formar_bloque(r)
 
-    assert tarea is not None
-    assert tarea["block_index"] == 1
-    assert "chain" in tarea and "prefix" in tarea
+    assert resumen is not None
+    assert resumen["block_index"] == 1
+    assert resumen["fragmentos"] == N_FRAGMENTOS        # se publicaron N tareas
     # el bloque quedo en pending, NO sellado todavia
     assert r.exists(keys.block_pending(1)) == 1
-    assert int(r.get(keys.CHAIN_HEIGHT)) == 0          # NO subio (sella el sealer)
+    assert int(r.get(keys.CHAIN_HEIGHT)) == 0           # NO subio (sella el sealer)
     # el pool NO se vacia al formar (se vacia al sellar)
     assert r.lrange(keys.POOL_PENDING, 0, -1) != []
 

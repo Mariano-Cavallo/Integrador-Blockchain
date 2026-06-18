@@ -19,14 +19,18 @@ def calcular_saldo(wallet, r):
     
     return saldo
 
-def _efecto(tx, wallet):    
-    if(tx["type"] in ("transferencia", "canje")):
+def _efecto(tx, wallet):
+    if tx["type"] in ("transferencia", "canje"):
+        # si from == to el efecto neto es 0 (no genera ni gasta tokens).
+        # Las validaciones rechazan estas tx, pero esto protege el calculo igualmente.
+        if tx["from"] == tx["to"]:
+            return 0
         if tx["to"] == wallet:
             return int(tx["tokens"])
         elif tx["from"] == wallet:
             return -int(tx["tokens"])
-    elif(tx["type"] == "emision"):
+    elif tx["type"] == "emision":
         if tx["to"] == wallet:
-            return int(tx["tokens"])    
+            return int(tx["tokens"])
     return 0
     

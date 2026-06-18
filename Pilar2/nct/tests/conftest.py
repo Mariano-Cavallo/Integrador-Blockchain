@@ -23,4 +23,8 @@ def r():
         "timestamp": "2026-01-01T00:00:00Z",
     })
     cliente.set(keys.CHAIN_HEIGHT, 0)
+    # registrar las wallets que usan los tests (validar_tx exige que el destinatario
+    # este registrado: r.exists(keys.pubkey(wallet))). El cine emisor tambien.
+    for w in ("Hoyts_0xA1b2", "Alice", "Bob", "Carol"):
+        cliente.set(keys.pubkey(w), "test-public-key")
     return cliente

@@ -2,8 +2,6 @@ import pika
 import secrets
 import logging
 import json
-import threading
-import time
 import datetime
 from app import keys
 from fastapi import FastAPI, HTTPException, Header
@@ -26,21 +24,8 @@ app.mount("/ui", StaticFiles(directory="static", html=True), name="ui")
 setup_logging()
 log = logging.getLogger("nct")
 
-
-def _loop_auto_bloque():
-    time.sleep(15)  # esperar que Redis esté listo
-    while True:
-        time.sleep(30)
-        try:
-            r = get_redis()
-            if r.llen(keys.POOL_PENDING) > 0:
-                resultado = formar_bloque(r)
-                if resultado:
-                    log.info("Auto-bloque formado: index=%s", resultado["block_index"])
-        except Exception as e:
-            log.error("Error en auto-bloque: %s", e)
-
-
+# La formación automática de bloques corre en nct-consumer (ver app/auto_block.py),
+# no en la API.
 
 
 @app.get("/")

@@ -38,6 +38,11 @@ def validar_tx(data, r):
             return (False, f"saldo insuficiente: tiene {saldo}, necesita {tx.tokens}")
 
     # 5. validar destinatario: debe estar registrado y ser del tipo correcto
+    # origen y destino no pueden ser el mismo (transferirse a uno mismo no tiene sentido
+    # y, por como se calcula el saldo, generaria tokens de la nada)
+    if tx.type in ("transferencia", "canje") and tx.from_ == tx.to:
+        return (False, "el origen y el destino no pueden ser la misma wallet")
+
     to_es_cine = tx.to in emisores
     to_registrado = bool(r.exists(keys.pubkey(tx.to)))
     if not to_registrado:

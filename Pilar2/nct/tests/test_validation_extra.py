@@ -30,3 +30,14 @@ def test_tx_distinto_timestamp_no_es_duplicada(r):
     tx2 = dict(EMISION, **{"timestamp": "2026-06-10T11:00:00Z"})
     ok2, _ = validar_tx(tx2, r)
     assert ok1 is True and ok2 is True   # distinto timestamp -> otra tx
+
+
+def test_transferencia_a_si_mismo_se_rechaza(r):
+    # Alice recibe saldo (emision valida)
+    validar_tx(dict(EMISION), r)
+    # Alice intenta transferirse a si misma -> debe rechazarse (no generar tokens)
+    tx = {"type": "transferencia", "from": "Alice", "to": "Alice",
+          "tokens": 5, "timestamp": "2026-06-10T12:00:00Z"}
+    ok, motivo = validar_tx(tx, r)
+    assert ok is False
+    assert "misma wallet" in motivo

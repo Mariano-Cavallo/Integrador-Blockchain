@@ -22,7 +22,7 @@
     }
     header h1 { font-size: 16px; margin: 0; font-weight: 600; }
     header .sub { color: var(--muted); font-size: 13px; }
-    .bar { margin-left: auto; display: flex; gap: 16px; font-size: 13px; color: var(--muted); }
+    .bar { margin-left: auto; display: flex; gap: 16px; font-size: 13px; color: var(--muted); align-items: center; }
     .bar span { display: flex; align-items: center; gap: 6px; }
     .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--err); }
     .dot.ok { background: var(--ok); }
@@ -53,11 +53,14 @@
     button.full { width: 100%; }
     button.secondary { background: transparent; color: var(--txt); border-color: var(--border); }
     button.secondary:hover { border-color: var(--accent); }
+    button.danger { background: var(--err); }
+    button.success { background: var(--ok); }
     .row { display: flex; gap: 10px; }
     .row > * { flex: 1; }
     .msg { margin-top: 12px; font-size: 13px; min-height: 18px; }
     .msg.ok { color: var(--ok); }
     .msg.err { color: var(--err); }
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
     .block { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
     .block.genesis { border-style: dashed; }
@@ -68,6 +71,18 @@
     .tx { border-top: 1px solid var(--border); padding: 8px 0 0; margin-top: 8px; font-size: 13px; }
     .tx .type { color: var(--accent); font-weight: 500; }
     .empty { color: var(--muted); font-size: 13px; }
+
+    /* secciones */
+    #login-section { max-width: 420px; margin: 80px auto; }
+    #pending-section { max-width: 420px; margin: 80px auto; }
+    #app { display: none; }
+
+    .solicitud-row {
+      border: 1px solid var(--border); border-radius: 6px; padding: 12px;
+      margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .solicitud-row .btns { display: flex; gap: 6px; }
+    .solicitud-row .btns button { margin-top: 0; padding: 4px 12px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -75,61 +90,382 @@
     <h1>PopToken</h1>
     <span class="sub">· Blockchain Explorer</span>
     <div class="bar">
+      <span id="wallet-info" style="color: var(--ok); display:none;"></span>
+      <span id="wallet-saldo" style="display:none;"></span>
+      <button id="btn-logout" onclick="cerrarSesion()" style="display:none; padding:4px 10px; font-size:12px; margin-top:0;">Cambiar wallet</button>
       <span><span class="dot" id="dot-redis"></span>Redis</span>
       <span><span class="dot" id="dot-rabbit"></span>RabbitMQ</span>
     </div>
   </header>
 
-  <main>
+  <!-- Login -->
+  <div id="login-section">
     <div class="panel">
-      <h2>Estado de la red</h2>
-      <div class="stats">
-        <div class="stat"><div class="num" id="st-height">–</div><div class="lbl">Altura de la cadena</div></div>
-        <div class="stat"><div class="num" id="st-pending">–</div><div class="lbl">Tx pendientes</div></div>
-      </div>
-      <button class="secondary full" onclick="formarBloque()">Formar bloque — minar pendientes</button>
-      <div class="msg" id="msg-block"></div>
+      <h2>Conectar Wallet</h2>
+      <label>Nombre de wallet</label>
+      <input id="login-wallet" placeholder="ej. Alice, Hoyts_123">
+
+      <p style="color:var(--muted); font-size:12px; margin: 18px 0 0;">Soy usuario</p>
+      <button class="full" onclick="generarWallet()">Generar nueva wallet</button>
+      <button class="full secondary" onclick="conectarWallet()">Conectar wallet existente</button>
+
+      <hr>
+
+      <p style="color:var(--muted); font-size:12px; margin: 0 0 0;">Soy un cine</p>
+      <button class="full secondary" onclick="solicitarEmisor()">Solicitar ser cine emisor</button>
+
+      <div class="msg" id="msg-login"></div>
     </div>
+  </div>
 
-    <div class="grid">
-      <div class="panel">
-        <h2>Enviar transacción</h2>
-        <label>Tipo</label>
-        <select id="tx-type" onchange="renderTxForm()">
-          <option value="emision">Emisión (cine)</option>
-          <option value="transferencia">Transferencia</option>
-          <option value="canje">Canje</option>
-        </select>
-        <div id="tx-fields"></div>
-        <button class="full" onclick="enviarTx()">Enviar</button>
-        <div class="msg" id="msg-tx"></div>
-      </div>
-
-      <div class="panel">
-        <h2>Consultar saldo</h2>
-        <label>Wallet</label>
-        <input id="bal-wallet" placeholder="ej. Alice">
-        <button class="full" onclick="consultarSaldo()">Consultar</button>
-        <div class="msg" id="msg-bal"></div>
-      </div>
-    </div>
-
+  <!-- Pendiente de aprobación -->
+  <div id="pending-section" style="display:none;">
     <div class="panel">
-      <h2>Cadena de bloques</h2>
-      <div id="chain"></div>
+      <h2>Solicitud pendiente</h2>
+      <p>Tu wallet <strong id="pending-wallet-name"></strong> está esperando aprobación de los cines existentes.</p>
+      <div id="pending-votos" style="margin: 12px 0; color: var(--muted); font-size: 13px;"></div>
+      <div class="msg" id="msg-pending">Esperando votos...</div>
     </div>
-  </main>
+  </div>
+
+  <!-- App principal -->
+  <div id="app">
+    <main>
+      <!-- Panel de solicitudes (solo visible para emisores) -->
+      <div id="solicitudes-panel" class="panel" style="display:none; margin-bottom:16px; border-color: var(--accent);">
+        <h2>Solicitudes de nuevos cines emisores</h2>
+        <div id="solicitudes-lista"><p class="empty">No hay solicitudes pendientes.</p></div>
+      </div>
+
+      <div class="panel">
+        <h2>Estado de la red</h2>
+        <div class="stats">
+          <div class="stat"><div class="num" id="st-height">–</div><div class="lbl">Altura de la cadena</div></div>
+          <div class="stat"><div class="num" id="st-pending">–</div><div class="lbl">Tx pendientes</div></div>
+        </div>
+        <p style="font-size:12px; color:var(--muted); margin:0;">Los bloques se forman automáticamente cada 30 segundos cuando hay transacciones pendientes.</p>
+      </div>
+
+      <div class="grid">
+        <!-- Panel usuario (transferencia y canje) -->
+        <div id="panel-usuario" class="panel" style="display:none;">
+          <h2>Enviar transacción</h2>
+          <label>Tipo</label>
+          <select id="tx-type" onchange="renderTxForm()">
+            <option value="transferencia">Transferencia (a otro usuario)</option>
+            <option value="canje">Canje (con un cine)</option>
+          </select>
+          <div id="tx-fields"></div>
+          <button class="full" onclick="enviarTx()">Enviar</button>
+          <div class="msg" id="msg-tx"></div>
+        </div>
+
+        <!-- Panel cine (solo emisión) -->
+        <div id="panel-cine" class="panel" style="display:none;">
+          <h2>Emitir tokens</h2>
+          <label>Usuario</label>
+          <input id="e-to" placeholder="nombre del usuario" onblur="validarDestinatarioEmision()">
+          <div id="msg-e-to" style="font-size:12px; min-height:16px; margin-top:4px;"></div>
+          <label>Cantidad</label>
+          <input id="e-tokens" type="number" value="10">
+          <div class="row">
+            <div><label>Motivo</label><input id="e-motivo" value="compra_entrada"></div>
+            <div><label>Película</label><input id="e-pelicula" value="Dune"></div>
+          </div>
+          <button class="full" onclick="emitir()">Emitir</button>
+          <div class="msg" id="msg-emision"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Consultar saldo</h2>
+          <label>Wallet</label>
+          <input id="bal-wallet" placeholder="ej. Alice">
+          <button class="full" onclick="consultarSaldo()">Consultar</button>
+          <div class="msg" id="msg-bal"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Cadena de bloques</h2>
+        <div id="chain"></div>
+      </div>
+    </main>
+  </div>
 
   <script>
     const API = "";
+    const PRODUCTOS = [
+      { nombre: "Entrada",   tokens: 50 },
+      { nombre: "Pochoclos", tokens: 15 },
+      { nombre: "Bebida",    tokens: 10 },
+    ];
 
-    async function api(path, opts) {
+    let sessionToken = null;
+    let walletActual = null;
+    let esEmisor = false;
+    let saldoActual = 0;
+    let pendingInterval = null;
+    let solicitudesInterval = null;
+
+    // ── helpers ──────────────────────────────────────────────
+    function val(id) { return document.getElementById(id).value.trim(); }
+
+    async function api(path, opts = {}) {
+      if (sessionToken) {
+        opts.headers = { ...opts.headers, "Authorization": `Bearer ${sessionToken}` };
+      }
       const res = await fetch(API + path, opts);
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.detail || res.statusText);
       return body;
     }
 
+    function toPEM(spki) {
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(spki)));
+      return `-----BEGIN PUBLIC KEY-----\n${b64.match(/.{1,64}/g).join("\n")}\n-----END PUBLIC KEY-----`;
+    }
+
+    function rawToDerHex(sig) {
+      function length(hex) { return ('00' + (hex.length / 2).toString(16)).slice(-2); }
+      var signHex = Array.prototype.map.call(sig, x => ('00' + x.toString(16)).slice(-2)).join('');
+      var r = signHex.substring(0, 96);
+      var s = signHex.substring(96);
+      var rPre = true, sPre = true;
+      while (r.indexOf('00') === 0) { r = r.substring(2); rPre = false; }
+      if (rPre && parseInt(r.substring(0, 2), 16) > 127) r = '00' + r;
+      while (s.indexOf('00') === 0) { s = s.substring(2); sPre = false; }
+      if (sPre && parseInt(s.substring(0, 2), 16) > 127) s = '00' + s;
+      var payload = '02' + length(r) + r + '02' + length(s) + s;
+      return '30' + length(payload) + payload;
+    }
+
+    // ── wallet / auth ─────────────────────────────────────────
+    async function generarWallet() {
+      const nombre = val("login-wallet");
+      const m = document.getElementById("msg-login");
+      if (!nombre) { m.className = "msg err"; m.textContent = "Ingresá un nombre de wallet."; return; }
+      try {
+        m.className = "msg"; m.textContent = "Generando claves...";
+        const keypair = await crypto.subtle.generateKey(
+          { name: "ECDSA", namedCurve: "P-384" }, true, ["sign", "verify"]
+        );
+        const privJWK = await crypto.subtle.exportKey("jwk", keypair.privateKey);
+        const pubRaw  = await crypto.subtle.exportKey("spki", keypair.publicKey);
+        const pubPEM  = toPEM(pubRaw);
+        localStorage.setItem(`wallet_${nombre}_priv`, JSON.stringify(privJWK));
+        localStorage.setItem(`wallet_${nombre}_pub`, pubPEM);
+        await api("/register", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: nombre, public_key: pubPEM })
+        });
+        await loginConClave(nombre, keypair.privateKey);
+      } catch (e) {
+        document.getElementById("msg-login").className = "msg err";
+        document.getElementById("msg-login").textContent = "✗ " + e.message;
+      }
+    }
+
+    async function conectarWallet() {
+      const nombre = val("login-wallet");
+      const m = document.getElementById("msg-login");
+      if (!nombre) { m.className = "msg err"; m.textContent = "Ingresá un nombre de wallet."; return; }
+      const privJWK = localStorage.getItem(`wallet_${nombre}_priv`);
+      const pubPEM  = localStorage.getItem(`wallet_${nombre}_pub`);
+      if (!privJWK || !pubPEM) { m.className = "msg err"; m.textContent = "Wallet no encontrada en este browser."; return; }
+      try {
+        m.className = "msg"; m.textContent = "Conectando...";
+        await api("/register", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: nombre, public_key: pubPEM })
+        });
+        const privateKey = await crypto.subtle.importKey(
+          "jwk", JSON.parse(privJWK), { name: "ECDSA", namedCurve: "P-384" }, false, ["sign"]
+        );
+        await loginConClave(nombre, privateKey);
+      } catch (e) {
+        m.className = "msg err"; m.textContent = "✗ " + e.message;
+      }
+    }
+
+    async function solicitarEmisor() {
+      const nombre = val("login-wallet");
+      const m = document.getElementById("msg-login");
+      if (!nombre) { m.className = "msg err"; m.textContent = "Ingresá un nombre de wallet."; return; }
+      try {
+        m.className = "msg"; m.textContent = "Generando claves y enviando solicitud...";
+        const keypair = await crypto.subtle.generateKey(
+          { name: "ECDSA", namedCurve: "P-384" }, true, ["sign", "verify"]
+        );
+        const privJWK = await crypto.subtle.exportKey("jwk", keypair.privateKey);
+        const pubRaw  = await crypto.subtle.exportKey("spki", keypair.publicKey);
+        const pubPEM  = toPEM(pubRaw);
+        localStorage.setItem(`wallet_${nombre}_priv`, JSON.stringify(privJWK));
+        localStorage.setItem(`wallet_${nombre}_pub`, pubPEM);
+        await api("/register", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: nombre, public_key: pubPEM })
+        });
+        // autenticarse
+        const { challenge } = await api(`/challenge/${encodeURIComponent(nombre)}`);
+        const enc = new TextEncoder();
+        const sigRaw = await crypto.subtle.sign(
+          { name: "ECDSA", hash: { name: "SHA-256" } }, keypair.privateKey, enc.encode(challenge)
+        );
+        const authResp = await api("/auth", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: nombre, signature: rawToDerHex(new Uint8Array(sigRaw)) })
+        });
+        sessionToken = authResp.token;
+        walletActual = nombre;
+        // enviar solicitud de emisor
+        await api("/solicitar_emisor", { method: "POST" });
+        mostrarPendiente(nombre, { votos_a_favor: 0, votos_en_contra: 0 });
+      } catch (e) {
+        m.className = "msg err"; m.textContent = "✗ " + e.message;
+      }
+    }
+
+    async function loginConClave(nombre, privateKey) {
+      const { challenge } = await api(`/challenge/${encodeURIComponent(nombre)}`);
+      const enc = new TextEncoder();
+      const sigRaw = await crypto.subtle.sign(
+        { name: "ECDSA", hash: { name: "SHA-256" } }, privateKey, enc.encode(challenge)
+      );
+      const resp = await api("/auth", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: nombre, signature: rawToDerHex(new Uint8Array(sigRaw)) })
+      });
+      sessionToken = resp.token;
+      walletActual = nombre;
+      // verificar si tiene solicitud pendiente
+      const estado = await api(`/estado_emisor/${encodeURIComponent(nombre)}`);
+      if (estado.estado === "pendiente") {
+        mostrarPendiente(nombre, estado);
+      } else {
+        esEmisor = (estado.estado === "aprobado");
+        mostrarApp(nombre);
+      }
+    }
+
+    function mostrarApp(nombre) {
+      document.getElementById("login-section").style.display = "none";
+      document.getElementById("pending-section").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("wallet-info").style.display = "inline";
+      document.getElementById("wallet-info").textContent = `Wallet: ${nombre}${esEmisor ? " (cine)" : ""}`;
+      document.getElementById("wallet-saldo").style.display = "inline";
+      document.getElementById("btn-logout").style.display = "inline";
+
+      // mostrar panel correcto según rol
+      document.getElementById("panel-usuario").style.display = esEmisor ? "none" : "block";
+      document.getElementById("panel-cine").style.display  = esEmisor ? "block" : "none";
+
+      renderTxForm();
+      refreshSaldoHeader(nombre);
+      refreshStatus();
+      refreshChain();
+      if (esEmisor) {
+        cargarSolicitudes();
+        solicitudesInterval = setInterval(cargarSolicitudes, 5000);
+      }
+    }
+
+    function mostrarPendiente(nombre, estado) {
+      document.getElementById("login-section").style.display = "none";
+      document.getElementById("app").style.display = "none";
+      document.getElementById("pending-section").style.display = "block";
+      document.getElementById("pending-wallet-name").textContent = nombre;
+      actualizarVotos(estado);
+      pendingInterval = setInterval(async () => {
+        try {
+          const e = await api(`/estado_emisor/${encodeURIComponent(nombre)}`);
+          if (e.estado === "aprobado") {
+            clearInterval(pendingInterval);
+            esEmisor = true;
+            mostrarApp(nombre);
+          } else if (e.estado === "rechazado" || e.estado === "no_solicitado") {
+            clearInterval(pendingInterval);
+            localStorage.removeItem(`wallet_${nombre}_priv`);
+            localStorage.removeItem(`wallet_${nombre}_pub`);
+            sessionToken = null; walletActual = null;
+            document.getElementById("pending-section").style.display = "none";
+            document.getElementById("login-section").style.display = "block";
+            document.getElementById("msg-login").className = "msg err";
+            document.getElementById("msg-login").textContent = "Tu solicitud fue rechazada.";
+          } else {
+            actualizarVotos(e);
+          }
+        } catch (err) {}
+      }, 3000);
+    }
+
+    function actualizarVotos(estado) {
+      document.getElementById("pending-votos").textContent =
+        `Votos a favor: ${estado.votos_a_favor ?? 0}  |  Votos en contra: ${estado.votos_en_contra ?? 0}`;
+    }
+
+    // ── emisores: ver y votar solicitudes ────────────────────
+    async function cargarSolicitudes() {
+      try {
+        const resp = await api("/solicitudes_emisor");
+        const panel = document.getElementById("solicitudes-panel");
+        const lista = document.getElementById("solicitudes-lista");
+        if (!resp.solicitudes.length) { panel.style.display = "none"; return; }
+        panel.style.display = "block";
+        lista.innerHTML = resp.solicitudes.map(s => `
+          <div class="solicitud-row">
+            <span><strong>${s.wallet}</strong> &nbsp;·&nbsp; A favor: ${s.votos_a_favor.length} &nbsp;·&nbsp; En contra: ${s.votos_en_contra.length}</span>
+            <span class="btns">
+              <button class="success" onclick="votar('${s.wallet}','aprobar')">Aprobar</button>
+              <button class="danger"  onclick="votar('${s.wallet}','rechazar')">Rechazar</button>
+            </span>
+          </div>`).join("");
+      } catch (e) {}
+    }
+
+    async function validarDestinatarioEmision() {
+      const wallet = document.getElementById("e-to").value.trim();
+      const div = document.getElementById("msg-e-to");
+      if (!wallet) { div.textContent = ""; return; }
+      try {
+        const r = await fetch(`/tipo_wallet/${encodeURIComponent(wallet)}`);
+        const data = await r.json();
+        if (data.tipo === "desconocida") {
+          div.style.color = "var(--err)"; div.textContent = "✗ Usuario no registrado";
+        } else if (data.tipo === "cine") {
+          div.style.color = "var(--err)"; div.textContent = "✗ Esa wallet es un cine, no un usuario";
+        } else {
+          div.style.color = "var(--ok)"; div.textContent = "✓ Usuario válido";
+        }
+      } catch (e) { div.textContent = ""; }
+    }
+
+    async function votar(wallet, voto) {
+      try {
+        const r = await api("/votar_emisor", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet, voto })
+        });
+        await cargarSolicitudes();
+      } catch (e) { alert("Error al votar: " + e.message); }
+    }
+
+    // ── logout ────────────────────────────────────────────────
+    function cerrarSesion() {
+      clearInterval(pendingInterval);
+      clearInterval(solicitudesInterval);
+      sessionToken = null; walletActual = null; esEmisor = false;
+      document.getElementById("app").style.display = "none";
+      document.getElementById("pending-section").style.display = "none";
+      document.getElementById("login-section").style.display = "block";
+      document.getElementById("wallet-info").style.display = "none";
+      document.getElementById("wallet-saldo").style.display = "none";
+      document.getElementById("btn-logout").style.display = "none";
+      document.getElementById("login-wallet").value = "";
+      document.getElementById("msg-login").textContent = "";
+    }
+
+    // ── status / chain ────────────────────────────────────────
     async function refreshStatus() {
       try {
         const s = await api("/status");
@@ -146,35 +482,103 @@
       document.getElementById(id).className = "dot" + (st === "ok" ? " ok" : "");
     }
 
+    async function refreshSaldoHeader(wallet) {
+      try {
+        const r = await api("/balance/" + encodeURIComponent(wallet));
+        saldoActual = r.saldo;
+        document.getElementById("wallet-saldo").textContent = `· ${r.saldo} tokens`;
+      } catch (e) {
+        document.getElementById("wallet-saldo").textContent = "· saldo no disponible";
+      }
+    }
+
+    // ── transacciones ─────────────────────────────────────────
     function renderTxForm() {
+      if (esEmisor) return;
       const t = document.getElementById("tx-type").value;
       const f = document.getElementById("tx-fields");
-      let html = `
-        <label>From (origen)</label><input id="f-from" placeholder="${t === 'emision' ? 'cine emisor' : 'wallet origen'}">
-        <label>To (destino)</label><input id="f-to" placeholder="wallet destino">
-        <label>Tokens</label><input id="f-tokens" type="number" value="10">`;
-      if (t === "emision") {
-        html += `<div class="row"><div><label>Motivo</label><input id="f-motivo" value="compra_entrada"></div>
-                 <div><label>Película</label><input id="f-pelicula" value="Dune"></div></div>`;
-      } else if (t === "canje") {
-        html += `<label>Beneficio</label><input id="f-beneficio" value="entrada_gratis">`;
+      if (t === "canje") {
+        const opts = PRODUCTOS.map(p => `<option value="${p.nombre}" data-tokens="${p.tokens}">${p.nombre} — ${p.tokens} tokens</option>`).join("");
+        f.innerHTML = `
+          <label>Producto a canjear</label>
+          <select id="f-producto" onchange="seleccionarProducto()">${opts}</select>
+          <label>Cine</label>
+          <input id="f-to" placeholder="nombre del cine" onblur="validarDestinatario('cine')">
+          <div id="msg-to" style="font-size:12px; min-height:16px; margin-top:4px;"></div>
+          <label>Tokens</label>
+          <input id="f-tokens" type="number" readonly style="opacity:0.6; cursor:not-allowed;">`;
+        seleccionarProducto();
+      } else {
+        f.innerHTML = `
+          <label>Usuario</label>
+          <input id="f-to" placeholder="nombre del usuario" onblur="validarDestinatario('usuario')">
+          <div id="msg-to" style="font-size:12px; min-height:16px; margin-top:4px;"></div>
+          <label>Tokens</label>
+          <input id="f-tokens" type="number" value="10">`;
       }
-      f.innerHTML = html;
+    }
+
+    function seleccionarProducto() {
+      const select = document.getElementById("f-producto");
+      const tokens = select.options[select.selectedIndex].dataset.tokens;
+      document.getElementById("f-tokens").value = tokens;
+    }
+
+    async function validarDestinatario(tipoEsperado) {
+      const wallet = document.getElementById("f-to").value.trim();
+      const div = document.getElementById("msg-to");
+      if (!wallet) { div.textContent = ""; return; }
+      try {
+        const r = await fetch(`/tipo_wallet/${encodeURIComponent(wallet)}`);
+        const data = await r.json();
+        if (data.tipo === "desconocida") {
+          div.style.color = "var(--err)"; div.textContent = "✗ Wallet no registrada";
+        } else if (data.tipo !== tipoEsperado) {
+          div.style.color = "var(--err)";
+          div.textContent = `✗ Esa wallet es un ${data.tipo === "cine" ? "cine" : "usuario"}, no un ${tipoEsperado}`;
+        } else {
+          div.style.color = "var(--ok)"; div.textContent = "✓ Válido";
+        }
+      } catch (e) { div.textContent = ""; }
     }
 
     async function enviarTx() {
       const t = document.getElementById("tx-type").value;
-      const tx = {
-        type: t, from: val("f-from"), to: val("f-to"),
-        tokens: parseInt(val("f-tokens"), 10), timestamp: new Date().toISOString(),
-      };
-      if (t === "emision") { tx.motivo = val("f-motivo"); tx.pelicula = val("f-pelicula"); }
-      if (t === "canje") { tx.beneficio = val("f-beneficio"); }
+      const tokens = parseInt(val("f-tokens"), 10);
       const m = document.getElementById("msg-tx");
+
+      if (t === "canje" && tokens > saldoActual) {
+        m.className = "msg err";
+        m.textContent = `✗ Tokens insuficientes. Tenés ${saldoActual}, necesitás ${tokens}.`;
+        return;
+      }
+
+      const tx = { type: t, from: walletActual, to: val("f-to"), tokens, timestamp: new Date().toISOString() };
+      if (t === "canje") {
+        const select = document.getElementById("f-producto");
+        tx.beneficio = select.options[select.selectedIndex].value;
+      }
       try {
         await api("/tx", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(tx) });
-        m.className = "msg ok"; m.textContent = "✓ Transacción aceptada y encolada.";
+        m.className = "msg ok"; m.textContent = "✓ Transacción aceptada. El bloque se formará automáticamente.";
         refreshStatus();
+        refreshSaldoHeader(walletActual);
+      } catch (e) { m.className = "msg err"; m.textContent = "✗ " + e.message; }
+    }
+
+    async function emitir() {
+      const tx = {
+        type: "emision", from: walletActual,
+        to: val("e-to"), tokens: parseInt(val("e-tokens"), 10),
+        motivo: val("e-motivo"), pelicula: val("e-pelicula"),
+        timestamp: new Date().toISOString(),
+      };
+      const m = document.getElementById("msg-emision");
+      try {
+        await api("/tx", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(tx) });
+        m.className = "msg ok"; m.textContent = "✓ Emisión aceptada. El bloque se formará automáticamente.";
+        refreshStatus();
+        refreshSaldoHeader(walletActual);
       } catch (e) { m.className = "msg err"; m.textContent = "✗ " + e.message; }
     }
 
@@ -229,11 +633,8 @@
       </div>`;
     }
 
-    function val(id) { return document.getElementById(id).value.trim(); }
-
     renderTxForm();
     refreshStatus();
-    refreshChain();
     setInterval(refreshStatus, 4000);
   </script>
 </body>

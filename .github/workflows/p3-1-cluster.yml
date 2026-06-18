@@ -1,0 +1,53 @@
+name: "P3-1 Cluster GKE"
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "apply o destroy"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - apply
+          - destroy
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  tofu:
+    name: "OpenTofu ${{ github.event.inputs.action }}"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar con Google Cloud via Workload Identity
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Instalar OpenTofu
+        uses: opentofu/setup-opentofu@v1
+
+      - name: tofu init
+        working-directory: Pilar3/tofu/cluster
+        run: tofu init
+
+      - name: tofu plan
+        working-directory: Pilar3/tofu/cluster
+        run: tofu plan -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -var="region=${{ secrets.GCP_REGION }}"
+
+      - name: tofu apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: Pilar3/tofu/cluster
+        run: tofu apply -auto-approve -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -var="region=${{ secrets.GCP_REGION }}"
+
+      - name: tofu destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: Pilar3/tofu/cluster
+        run: tofu destroy -auto-approve -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -var="region=${{ secrets.GCP_REGION }}"

@@ -11,7 +11,8 @@ def publicar_tarea(tarea: dict):
     canal = conexion.channel()
 
     # 2. declarar la cola (idempotente: si ya existe, no hace nada)
-    canal.queue_declare(queue=MINING_TASKS, durable=True)
+    canal.queue_declare(queue=MINING_TASKS, durable=True,
+                        arguments={"x-queue-type": "quorum"})
 
     # 3. publicar el mensaje (la tarea serializada a JSON)
     canal.basic_publish(

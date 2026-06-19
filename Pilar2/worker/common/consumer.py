@@ -25,8 +25,10 @@ def run_worker(minar):
     params = pika.URLParameters(RABBITMQ_URL)
     conexion = pika.BlockingConnection(params)
     canal = conexion.channel()
-    canal.queue_declare(queue=MINING_TASKS, durable=True)
-    canal.queue_declare(queue=MINING_RESULTS, durable=True)
+    canal.queue_declare(queue=MINING_TASKS, durable=True,
+                        arguments={"x-queue-type": "quorum"})
+    canal.queue_declare(queue=MINING_RESULTS, durable=True,
+                        arguments={"x-queue-type": "quorum"})
     log.info("Worker conectado, esperando tareas en %s", MINING_TASKS)  
 
     def callback(ch, method, props, body):

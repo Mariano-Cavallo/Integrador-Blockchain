@@ -1,0 +1,35 @@
+name: "P3-2 Infra (Redis + RabbitMQ)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-infra:
+    name: "Desplegar Redis y RabbitMQ en el cluster"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar con Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Instalar gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Obtener credenciales del cluster GKE
+        run: |
+          gcloud container clusters get-credentials blockchain-cluster \
+            --zone us-central1-a \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Aplicar manifiestos de infra
+        run: kubectl apply -f Pilar3/k8s/infra/

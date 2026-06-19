@@ -15,7 +15,8 @@ def _consumir():
     params = pika.URLParameters(RABBITMQ_URL)
     conexion = pika.BlockingConnection(params)
     canal = conexion.channel()
-    canal.queue_declare(queue=MINING_RESULTS, durable=True)
+    canal.queue_declare(queue=MINING_RESULTS, durable=True,
+                        arguments={"x-queue-type": "quorum"})
 
     def callback(ch, method, props, body):
         resultado = json.loads(body)

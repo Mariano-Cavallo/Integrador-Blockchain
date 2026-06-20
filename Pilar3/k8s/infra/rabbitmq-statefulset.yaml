@@ -34,11 +34,20 @@ spec:
               name: inter-node
           env:
             - name: RABBITMQ_DEFAULT_USER
-              value: "guest"
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_USER
             - name: RABBITMQ_DEFAULT_PASS
-              value: "guest"
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_PASS
             - name: RABBITMQ_ERLANG_COOKIE
-              value: "blockchain-secret-cookie"
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_ERLANG_COOKIE
             - name: RABBITMQ_USE_LONGNAME
               value: "true"
             - name: MY_POD_NAME

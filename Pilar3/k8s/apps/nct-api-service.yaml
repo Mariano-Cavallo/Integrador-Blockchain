@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nct-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: nct-api
+  ports:
+    - port: 80
+      targetPort: 8888

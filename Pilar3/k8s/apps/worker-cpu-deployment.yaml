@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-cpu
+spec:
+  replicas: 1                      # respaldo; el HPA lo escala segun demanda
+  selector:
+    matchLabels:
+      app: worker-cpu
+  template:
+    metadata:
+      labels:
+        app: worker-cpu
+    spec:
+      nodeSelector:
+        role: apps
+      containers:
+        - name: worker-cpu
+          image: <ARTIFACT_REGISTRY>/worker-cpu:latest
+          env:
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nct-rabbitmq-url
+                  key: RABBITMQ_URL
+          resources:
+            requests:
+              cpu: "250m"          # necesario para que el HPA por CPU funcione
+            limits:
+              cpu: "1000m"

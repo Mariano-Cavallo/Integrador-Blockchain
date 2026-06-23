@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nct-consumer
+spec:
+  replicas: 2                      # lock distribuido evita bloques duplicados
+  selector:
+    matchLabels:
+      app: nct-consumer
+  template:
+    metadata:
+      labels:
+        app: nct-consumer
+    spec:
+      nodeSelector:
+        role: apps
+      containers:
+        - name: nct-consumer
+          image: <ARTIFACT_REGISTRY>/nct:latest
+          command: ["python", "-m", "scripts.run_consumer"]
+          envFrom:
+            - configMapRef:
+                name: nct-config
+          env:
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nct-rabbitmq-url
+                  key: RABBITMQ_URL

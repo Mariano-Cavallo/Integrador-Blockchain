@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nct-api
+spec:
+  replicas: 2                      # ≥2 para tolerancia a fallos
+  selector:
+    matchLabels:
+      app: nct-api
+  template:
+    metadata:
+      labels:
+        app: nct-api
+    spec:
+      nodeSelector:
+        role: apps                 # va al apps-pool (NO al infra)
+      containers:
+        - name: nct-api
+          image: <ARTIFACT_REGISTRY>/nct:latest   # la imagen que pushea el pipeline
+          ports:
+            - containerPort: 8888
+          envFrom:
+            - configMapRef:
+                name: nct-config          # REDIS_URL, N_FRAGMENTOS
+          env:
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nct-rabbitmq-url
+                  key: RABBITMQ_URL
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8888
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8888
+            initialDelaySeconds: 15
+            periodSeconds: 30

@@ -1,0 +1,60 @@
+name: P3-3 Deploy Apps
+
+on:
+  workflow_dispatch:        # disparo manual (botón en GitHub)
+  push:
+    branches: [main]
+    paths:
+      - 'Pilar2/nct/**'
+      - 'Pilar2/worker/**'
+      - 'Pilar3/k8s/apps/**'
+
+permissions:
+  contents: read
+  id-token: write           # NECESARIO para el OIDC (pedir el token)
+
+env:
+  PROJECT_ID: blockchain-tp
+  REGION: us-central1
+  REGISTRY: us-central1-docker.pkg.dev/blockchain-tp/blockchain-registry
+  CLUSTER: blockchain-cluster      # confirmar el nombre con tu compañero
+  CLUSTER_ZONE: us-central1-a
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Auth a GCP via Workload Identity (sin claves)
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: 'projects/674993689697/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'github-actions@blockchain-tp.iam.gserviceaccount.com'
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # 2. Configurar Docker para pushear al registry
+      - run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # 3. Build + push de las imagenes
+      - run: |
+          docker build -t $REGISTRY/nct:latest ./Pilar2/nct
+          docker push $REGISTRY/nct:latest
+          docker build -f ./Pilar2/worker/cpu/Dockerfile -t $REGISTRY/worker-cpu:latest ./Pilar2/worker
+          docker push $REGISTRY/worker-cpu:latest
+
+      # 4. Conectar kubectl al cluster
+      - run: gcloud container clusters get-credentials $CLUSTER --zone $CLUSTER_ZONE
+
+      # 5. Crear/actualizar el Secret de la URL de RabbitMQ
+      - run: |
+          kubectl create secret generic nct-rabbitmq-url \
+            --from-literal=RABBITMQ_URL="amqp://poptoken:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5672/" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # 6. Desplegar los manifiestos (reemplazando el placeholder de la imagen)
+      - run: |
+          sed -i "s|<ARTIFACT_REGISTRY>|$REGISTRY|g" Pilar3/k8s/apps/*.yaml
+          kubectl apply -f Pilar3/k8s/apps/

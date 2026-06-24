@@ -1,7 +1,7 @@
 import subprocess, re
 from common.consumer import run_worker
 
-EXE = "/app/limites_gpu.exe"   # o la ruta dentro del contenedor
+EXE = "/app/limites_gpu"   
 
 def minar(cadena, prefijo, nonce_min, nonce_max):
     out = subprocess.run([EXE, cadena, prefijo, str(nonce_min), str(nonce_max)],
@@ -11,3 +11,6 @@ def minar(cadena, prefijo, nonce_min, nonce_max):
     if m_nonce and m_hash:
         return int(m_nonce.group(1)), m_hash.group(1)
     return None, None
+
+if __name__ == "__main__":
+    run_worker(minar)

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-gpu
+  namespace: g-la-25
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-gpu
+  template:
+    metadata:
+      labels:
+        app: worker-gpu
+    spec:
+      containers:
+        - name: worker-gpu
+          image: us-central1-docker.pkg.dev/blockchain-tp/blockchain-registry/worker-gpu:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          env:
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: worker-gpu-rabbitmq
+                  key: RABBITMQ_URL
+
+

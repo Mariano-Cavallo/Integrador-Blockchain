@@ -21,12 +21,32 @@ Desplegar PopToken (Pilar 2, ya completo y dockerizado) en **GKE** con **toleran
 
 | Fase | Estado |
 |---|---|
-| 0 — Prep GCP (proyecto, billing, APIs, Artifact Registry, OIDC) | ✅ (lo hizo mayormente el compañero) |
+| 0 — Prep GCP (proyecto, billing, APIs, Artifact Registry, OIDC) | ✅ |
 | 1 — Cluster GKE (Terraform `Pilar3/tofu/cluster/`) | ✅ creado y corriendo |
-| 2 — Redis + RabbitMQ (`Pilar3/k8s/infra/`) | 🟡 Redis OK, **RabbitMQ bloqueado** (ver abajo) |
-| 3 — Apps (`Pilar3/k8s/apps/`) | ✅ manifiestos escritos, sin desplegar aún |
-| 4 — Worker GPU en cluster del profe | ⬜ pendiente |
+| 2 — Redis + RabbitMQ (`Pilar3/k8s/infra/`) | ✅ desplegado (RabbitMQ en 1 réplica standalone, ver nota) |
+| 3 — Apps (`Pilar3/k8s/apps/`) | ✅ **DESPLEGADO Y FUNCIONANDO** |
+| HTTPS / Ingress | ✅ nginx-ingress + cert autofirmado |
+| 4 — Worker GPU en cluster del profe | ✅ **FUNCIONANDO** — minando tareas reales con GPU |
+
+> **Worker GPU (Fase 4) — COMPLETO:**
+> - Imagen `worker-gpu` (multi-stage): compila `limites_gpu.cu` del Pilar 1 con `nvcc -arch=sm_61` (GTX 1050 = Pascal). Base `nvidia/cuda:12.2.2`.
+> - Desplegado en cluster del profe (k3s), namespace `g-la-25`, `nvidia.com/gpu: 1`, `imagePullPolicy: Always`.
+> - Consume `mining_tasks` del RabbitMQ del GKE vía IP pública `35.222.70.5:5672` y mina con GPU real (resuelve los 4 fragmentos de cada bloque). Verificado con logs "Fragmento [...] GANADOR: nonce=...".
+> - **BUG resuelto (incompatibilidad versión CUDA)**: la imagen usaba CUDA 12.4 runtime, pero el driver del nodo del profe (535.x) soporta hasta CUDA 12.2 → error `forward compatibility was attempted on non supported HW` → `cudaGetDeviceCount`=0 → kernel no ejecutaba (terminaba en 0.000s "sin solución"). FIX: bajar imagen a `nvidia/cuda:12.2.2`. NO era la GPU ni el código.
+> - Se agregó chequeo de errores CUDA a `limites_gpu.cu` (cudaGetLastError + cudaDeviceSynchronize + cudaGetDeviceProperties) que reveló la causa exacta.
+> - El worker-cpu del GKE queda como minero de respaldo (tolerancia a fallos).
 | 5 — Pruebas de carga + informe | ⬜ pendiente |
+
+## ✅ APP FUNCIONANDO EN PRODUCCIÓN
+
+- URL pública: **https://34.122.53.67/ui** (HTTPS con cert autofirmado → el navegador pide aceptar la advertencia una vez; necesario para que `crypto.subtle` de la UI funcione, no anda por HTTP plano).
+- Ingress IP: `34.122.53.67` (ingress-nginx controller). El Service `nct-api` quedó como ClusterIP (el Ingress es la entrada pública).
+- Cert TLS: Secret `nct-tls` (autofirmado por openssl para la IP). Regenerar si cambia la IP del ingress.
+- Todo corriendo: redis-0, rabbitmq-0, nct-api (x2), nct-consumer (x2), worker-cpu.
+- CI/CD: el workflow `p3-3-apps` (disparo manual workflow_dispatch) buildea+pushea imágenes y despliega. GitHub Secret `RABBITMQ_PASS` = `PopToken2026Segura`.
+
+PENDIENTE INMEDIATO: sembrar el génesis en el Redis del cluster:
+`kubectl exec <pod-nct-api> -- python -m scripts.seed_genesis` (verificar que la wallet/genesis funcione con el flujo de auth actual).
 
 ## 🚨 BLOQUEANTE ACTUAL: RabbitMQ no forma cluster en GKE
 
@@ -107,8 +127,3 @@ kubectl create secret generic nct-rabbitmq-url `
 - Worker GPU (Fase 4): Dockerfile con CUDA + binario del Pilar 1 + manifiesto para el cluster del profe.
 - Workflows: existen `p3-1-cluster`, `p3-2-infra`, `p3-3-apps`. Falta `p3-4-worker-gpu`.
 
-## Coordinación de equipo
-
-- El compañero maneja el Terraform del cluster. **No correr `terraform apply` sin coordinar** (no duplicar cluster).
-- Trabajar en ramas separadas + PRs para no pisarse.
-- En paralelo, los compañeros pueden ir con: informe + scripts de carga + gráficas + video + diagramas + worker GPU.

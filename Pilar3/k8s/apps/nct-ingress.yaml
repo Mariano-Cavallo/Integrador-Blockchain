@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nct-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"  
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - 34.122.53.67.nip.io     
+      secretName: nct-tls         
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nct-api
+                port:
+                  number: 80

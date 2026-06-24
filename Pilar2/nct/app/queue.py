@@ -12,7 +12,7 @@ def publicar_tarea(tarea: dict):
 
     # 2. declarar la cola (idempotente: si ya existe, no hace nada)
     canal.queue_declare(queue=MINING_TASKS, durable=True,
-                        arguments={"x-queue-type": "quorum"})
+                        arguments={"x-queue-type": "quorum", "x-quorum-initial-group-size": 3})
 
     # 3. publicar el mensaje (la tarea serializada a JSON)
     canal.basic_publish(

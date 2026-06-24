@@ -43,7 +43,7 @@ Desplegar PopToken (Pilar 2, ya completo y dockerizado) en **GKE** con **toleran
 - Ingress IP: `34.122.53.67` (ingress-nginx controller). El Service `nct-api` quedó como ClusterIP (el Ingress es la entrada pública).
 - Cert TLS: Secret `nct-tls` (autofirmado por openssl para la IP). Regenerar si cambia la IP del ingress.
 - Todo corriendo: redis-0, rabbitmq-0, nct-api (x2), nct-consumer (x2), worker-cpu.
-- CI/CD: el workflow `p3-3-apps` (disparo manual workflow_dispatch) buildea+pushea imágenes y despliega. GitHub Secret `RABBITMQ_PASS` = `PopToken2026Segura`.
+- CI/CD: el workflow `p3-3-apps` (disparo manual workflow_dispatch) buildea+pushea imágenes y despliega.
 
 PENDIENTE INMEDIATO: sembrar el génesis en el Redis del cluster:
 `kubectl exec <pod-nct-api> -- python -m scripts.seed_genesis` (verificar que la wallet/genesis funcione con el flujo de auth actual).
@@ -126,4 +126,6 @@ kubectl create secret generic nct-rabbitmq-url `
   Reemplazar por la IP de salida del cluster del profe cuando se tenga.
 - Worker GPU (Fase 4): Dockerfile con CUDA + binario del Pilar 1 + manifiesto para el cluster del profe.
 - Workflows: existen `p3-1-cluster`, `p3-2-infra`, `p3-3-apps`. Falta `p3-4-worker-gpu`.
+
+
 

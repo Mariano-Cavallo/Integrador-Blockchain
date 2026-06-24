@@ -35,6 +35,9 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
+      # Plugin necesario para que kubectl se autentique contra GKE
+      - run: gcloud components install gke-gcloud-auth-plugin --quiet
+
       # 2. Configurar Docker para pushear al registry
       - run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 

@@ -4,14 +4,11 @@ metadata:
   name: rabbitmq-config
 data:
   rabbitmq.conf: |
-    cluster_formation.peer_discovery_backend = rabbit_peer_discovery_k8s
-    cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
-    cluster_formation.k8s.address_type = hostname
-    cluster_formation.node_cleanup.interval = 10
-    cluster_formation.node_cleanup.only_log_warning = true
-    cluster_partition_handling = autoheal
+    # Modo standalone (1 replica): sin peer discovery K8s para evitar el bug
+    # de RabbitMQ 3.13 + GKE 1.35 (badkey:hostname). Volver a activar cluster
+    # formation cuando se use el RabbitMQ Cluster Operator.
     cluster_name = blockchain-rabbit
     queue_master_locator = min-masters
     loopback_users.guest = false
   enabled_plugins: |
-    [rabbitmq_management,rabbitmq_peer_discovery_k8s].
+    [rabbitmq_management].

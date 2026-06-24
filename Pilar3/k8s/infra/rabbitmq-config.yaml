@@ -4,11 +4,19 @@ metadata:
   name: rabbitmq-config
 data:
   rabbitmq.conf: |
-    # Modo standalone (1 replica): sin peer discovery K8s para evitar el bug
-    # de RabbitMQ 3.13 + GKE 1.35 (badkey:hostname). Volver a activar cluster
-    # formation cuando se use el RabbitMQ Cluster Operator.
     cluster_name = blockchain-rabbit
-    queue_master_locator = min-masters
     loopback_users.guest = false
+
+    # Peer discovery via classic_config: evita el bug RabbitMQ 3.13 + K8s 1.35
+    # (badkey:hostname en rabbit_peer_discovery_k8s). Los nombres de pods en un
+    # StatefulSet son predecibles, no se necesita la API de K8s.
+    cluster_formation.peer_discovery_backend = rabbit_peer_discovery_classic_config
+    cluster_formation.classic_config.nodes.1 = rabbit@rabbitmq-0.rabbitmq-headless.default.svc.cluster.local
+    cluster_formation.classic_config.nodes.2 = rabbit@rabbitmq-1.rabbitmq-headless.default.svc.cluster.local
+    cluster_formation.classic_config.nodes.3 = rabbit@rabbitmq-2.rabbitmq-headless.default.svc.cluster.local
+
+    cluster_formation.node_cleanup.interval = 30
+    cluster_formation.node_cleanup.only_log_warning = true
+    cluster_partition_handling = autoheal
   enabled_plugins: |
     [rabbitmq_management].

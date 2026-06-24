@@ -4,7 +4,7 @@ metadata:
   name: rabbitmq
 spec:
   serviceName: rabbitmq-headless
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: rabbitmq
@@ -13,7 +13,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      subdomain: rabbitmq-headless
       serviceAccountName: rabbitmq
       nodeSelector:
         role: infra

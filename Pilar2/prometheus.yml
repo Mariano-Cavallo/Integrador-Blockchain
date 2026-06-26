@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'nct-api'
+    static_configs:
+      - targets: ['nct-api:8888']
+
+  - job_name: 'nct-consumer'
+    static_configs:
+      - targets: ['nct-consumer:8889']
+
+  - job_name: 'worker-cpu'
+    static_configs:
+      - targets: ['worker-cpu:8001']

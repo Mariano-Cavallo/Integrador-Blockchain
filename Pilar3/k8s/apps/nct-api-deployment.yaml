@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: nct-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8888"
     spec:
       nodeSelector:
         role: apps                 # va al apps-pool (NO al infra)

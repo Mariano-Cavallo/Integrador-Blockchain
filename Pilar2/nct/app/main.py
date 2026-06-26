@@ -68,6 +68,8 @@ def register(data: dict):
     public_key = data.get("public_key")
     if not wallet or not public_key:
         raise HTTPException(status_code=400, detail="faltan campos wallet o public_key")
+    if r.exists(keys.pubkey(wallet)):
+        raise HTTPException(status_code=409, detail="wallet ya registrada")
     r.set(keys.pubkey(wallet), public_key)
     return {"status": "registrado", "wallet": wallet}
 

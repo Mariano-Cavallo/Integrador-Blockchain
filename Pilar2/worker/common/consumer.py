@@ -2,12 +2,15 @@ import json
 import pika
 import logging
 import os
+from prometheus_client import Counter, start_http_server
 from common.config import RABBITMQ_URL
 
 MINING_TASKS = "mining_tasks" 
 MINING_RESULTS = "mining_results"
 LOG_FILE = os.getenv("LOG_FILE", "worker.log")   # local: ./worker.log ; docker: /var/log/worker.log
 
+tasks_processed = Counter("worker_tasks_processed_total", "Fragmentos de minado procesados")
+tasks_won       = Counter("worker_tasks_won_total", "Fragmentos ganados (nonce encontrado)")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +24,7 @@ logging.getLogger("pika").setLevel(logging.WARNING)   # silenciar ruido de pika
 log = logging.getLogger("worker")
 
 def run_worker(minar):
-    # minar es la funcion que cada tipo de worker provee (CPU o GPU)
+    start_http_server(8001)           # expone métricas en puerto 8001
     params = pika.URLParameters(RABBITMQ_URL)
     conexion = pika.BlockingConnection(params)
     canal = conexion.channel()
@@ -34,7 +37,9 @@ def run_worker(minar):
     def callback(ch, method, props, body):
         tarea = json.loads(body)
         nonce, h = minar(tarea["chain"], tarea["prefix"], tarea["nonce_min"], tarea["nonce_max"])
+        tasks_processed.inc()
         if nonce is not None:
+            tasks_won.inc()
             resultado = {"block_index": tarea["block_index"], "nonce": nonce, "hash": h}
             ch.basic_publish(exchange="", routing_key=MINING_RESULTS,
                              body=json.dumps(resultado),

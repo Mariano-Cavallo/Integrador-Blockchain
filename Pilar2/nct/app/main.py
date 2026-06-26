@@ -3,14 +3,14 @@ import secrets
 import logging
 import json
 import datetime
-from app import keys
+from app import keys, metrics as m
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import make_asgi_app
 from app.config import RABBITMQ_URL
 from app.redis_client import get_redis
 from app.validation import validar_tx
 from app.balances import calcular_saldo
-from app.chain import formar_bloque
 from app.chain import formar_bloque, leer_cadena, leer_bloque, leer_pool
 from app.logging_config import setup_logging
 from app.auth import verificar_firma
@@ -20,6 +20,7 @@ from fastapi.responses import RedirectResponse
 app = FastAPI(title="NCT PopToken")
 
 app.mount("/ui", StaticFiles(directory="static", html=True), name="ui")
+app.mount("/metrics", make_asgi_app())
 
 setup_logging()
 log = logging.getLogger("nct")
@@ -115,9 +116,12 @@ def recibir_tx(data: dict, authorization: str = Header(None)):
     if data.get("from") != wallet_autenticada:
         raise HTTPException(status_code=403, detail="no podés enviar transacciones en nombre de otra wallet")
     ok, motivo = validar_tx(data, r)
-    log.info("Tx %s recibida: %s", "aceptada" if ok else "rechazada", motivo)
+    resultado = "aceptada" if ok else "rechazada"
+    m.tx_total.labels(tipo=data.get("tipo", "desconocido"), resultado=resultado).inc()
+    log.info("Tx %s recibida: %s", resultado, motivo)
     if not ok:
         raise HTTPException(status_code=400, detail=motivo)
+    m.pool_size.set(r.llen(keys.POOL_PENDING))
     return {"status": "aceptada", "motivo": motivo}
 
 
@@ -264,8 +268,9 @@ def estado_emisor(wallet: str, authorization: str = Header(None)):
 def crear_bloque():
     r = get_redis()
     bloque = formar_bloque(r)
-    log.info("Bloque %s formado, tarea publicada", bloque["block_index"])
     if bloque is None:
         raise HTTPException(status_code=400, detail="no hay transacciones pendientes")
+    m.blocks_formed.inc()
+    log.info("Bloque %s formado, tarea publicada", bloque["block_index"])
     return bloque
 

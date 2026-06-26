@@ -18,13 +18,14 @@ con minería distribuida y tolerancia a fallos.
    ║   │ Ingress nginx  (LB 34.122.53.67)       │   ║        │
    ║   │  TLS cert autofirmado (Secret nct-tls) │   ║        │
    ║   └───────────────────┬────────────────────┘   ║        │
-   ║                       │ /  → nct-api           ║        │ 
+   ║                       │ /  → nct-api           ║        │
    ║   ┌───────────── nodegroup APPS ───────────┐   ║        │
    ║   │                   ▼                    │   ║        │
    ║   │   ┌─────────────────────────────┐      │   ║        │
    ║   │   │ nct-api  (Deployment ×2)    │      │   ║        │
    ║   │   │  FastAPI + Web UI (/ui)     │      │   ║        │
    ║   │   │  POST /tx /block · GET ...  │      │   ║        │
+   ║   │   │  /metrics (:8888)           │      │   ║        │
    ║   │   └──────┬───────────────┬──────┘      │   ║        │
    ║   │          │               │             │   ║        │
    ║   │   ┌───────────────┐  ┌──────────────┐  │   ║        │
@@ -32,21 +33,32 @@ con minería distribuida y tolerancia a fallos.
    ║   │   │ (Deploy ×2)   │  │ (Deploy +HPA)│  │   ║        │
    ║   │   │ sella bloques │  │ minero CPU   │  │   ║        │
    ║   │   │ + auto-bloque │  │ (respaldo)   │  │   ║        │
-   ║   │   │  (lock Redis) │  │              │  │   ║        │
+   ║   │   │ (lock Redis)  │  │ /metrics     │  │   ║        │
+   ║   │   │ /metrics(:8889│  │ (:8001)      │  │   ║        │
    ║   │   └──┬─────────┬──┘  └──────┬───────┘  │   ║        │
+   ║   │      │         │            │          │   ║        │
+   ║   │   ┌──────────────────────────────────┐ │   ║        │
+   ║   │   │ grafana  (Deployment ×1)         │ │   ║        │
+   ║   │   │  dashboard de métricas           │ │   ║        │
+   ║   │   │  LB → IP pública (:3000)         │ │   ║        │
+   ║   │   └──────────────────────────────────┘ │   ║        │
    ║   └──────┼─────────┼────────────┼──────────┘   ║        │
    ║          │         │            │              ║        │
    ║   ┌──────┼─────────┼────────────┼───────────┐  ║        │
    ║   │      ▼ nodegroup INFRA      ▼           │  ║        │
-   ║   │  ┌──────────┐      ┌────────────────┐   │  ║        │
-   ║   │  │  Redis   │      │   RabbitMQ     │   │  ║        │
-   ║   │  │ StatefulS│      │  StatefulSet   │   │  ║        │
-   ║   │  │ 1 + PVC  │      │  1 réplica*    │◄──┼──┼────────┘
-   ║   │  │ (cadena, │      │  colas:        │   │  ║   Service LoadBalancer
-   ║   │  │  saldos) │      │  mining_tasks  │   │  ║   rabbitmq-external
-   ║   │  │ AOF      │      │  mining_results│   │  ║   (35.222.70.5:5672)
-   ║   │  └──────────┘      │  (quorum qs)   │   │  ║
-   ║   │                    └────────────────┘   │  ║
+   ║   │  ┌──────────┐  ┌──────────┐  ┌───────┐  │  ║        │
+   ║   │  │  Redis   │  │RabbitMQ  │  │Promet.│  │  ║        │
+   ║   │  │ StatefulS│  │StatefulS │  │Deploy │  │  ║        │
+   ║   │  │ 1 + PVC  │  │ 3 réplicas  │1+PVC  │  │  ║        │
+   ║   │  │ (cadena, │  │ cluster  │  │10Gi   │  │  ║        │
+   ║   │  │  saldos) │  │classic   │  │(:9090)│  │  ║        │
+   ║   │  │ AOF      │  │config    │◄─┼───────┘  │  ║        │
+   ║   │  └──────────┘  └──────────┘  │  scrape  │  ║        │
+   ║   │                    ▲         │  pods    │  ║        │
+   ║   │                    └─────────┘          │  ║        │
+   ║   │              Service LoadBalancer        │  ║        │
+   ║   │              rabbitmq-external           │  ║        │
+   ║   │              (35.222.70.5:5672)◄─────────┼──╬────────┘
    ║   └─────────────────────────────────────────┘  ║
    ╚════════════════════════════════════════════════╝
                           ▲
@@ -63,10 +75,6 @@ con minería distribuida y tolerancia a fallos.
    ║   │   GPU: GeForce GTX 1050              │     ║
    ║   └──────────────────────────────────────┘     ║
    ╚════════════════════════════════════════════════╝
-
-   (*) RabbitMQ en 1 réplica standalone por incompatibilidad
-       RabbitMQ 3.13 + GKE 1.35 en el clustering. Pendiente:
-       3 réplicas con RabbitMQ Cluster Operator (consultado al profe).
 ```
 
 ## Flujo de una transacción (ciclo completo)
@@ -102,11 +110,13 @@ con minería distribuida y tolerancia a fallos.
 | Componente | Dónde | Rol | Réplicas / HA |
 |---|---|---|---|
 | **Ingress nginx** | GKE | Entrada HTTPS pública | LoadBalancer |
-| **nct-api** | GKE / apps | API REST + Web UI | 2 réplicas |
-| **nct-consumer** | GKE / apps | Sella bloques + auto-formación (lock distribuido) | 2 réplicas |
-| **worker-cpu** | GKE / apps | Minero CPU (respaldo elástico) | HPA 1–6 |
+| **nct-api** | GKE / apps | API REST + Web UI + `/metrics` (:8888) | 2 réplicas |
+| **nct-consumer** | GKE / apps | Sella bloques + auto-formación (lock distribuido) + `/metrics` (:8889) | 2 réplicas |
+| **worker-cpu** | GKE / apps | Minero CPU (respaldo elástico) + `/metrics` (:8001) | HPA 1–6 |
 | **Redis** | GKE / infra | Estado: cadena, saldos, pool | 1 + PVC (reschedule) |
-| **RabbitMQ** | GKE / infra | Colas de PoW (tasks/results) | 1 standalone* |
+| **RabbitMQ** | GKE / infra | Colas de PoW (tasks/results) | 3 réplicas (classic_config peer discovery) |
+| **Prometheus** | GKE / infra | Recolección de métricas (scrape por anotaciones) | 1 + PVC 10Gi |
+| **Grafana** | GKE / apps | Visualización de métricas | 1 + LoadBalancer |
 | **worker-gpu** | Cluster profe | Minero CUDA (primario) | 1 + GPU |
 
 ## Tolerancia a fallos
@@ -115,6 +125,19 @@ con minería distribuida y tolerancia a fallos.
 - **Redis**: StatefulSet + PVC → si cae el nodo, K8s reprograma y re-monta el disco (sin perder la cadena).
 - **Minería**: si el worker-gpu (profe) no está disponible, el worker-cpu (GKE) mina igual → la cadena no se frena.
 - **Auto-formación de bloques**: lock distribuido en Redis → con 2 réplicas de consumer, solo una forma cada bloque (sin duplicados); si la que tiene el lock cae, otra lo toma.
+
+## Monitoring (Prometheus + Grafana)
+
+- **Prometheus** corre en `infra-pool`, scrapea métricas cada 15s usando auto-discovery por anotaciones (`prometheus.io/scrape: "true"`).
+- **Grafana** expone dashboard en IP pública (LoadBalancer `:3000`). Datasource: `http://prometheus:9090`.
+
+| Componente | Puerto métricas | Métricas expuestas |
+|---|---|---|
+| nct-api | `:8888/metrics` | `nct_transactions_total`, `nct_blocks_formed_total`, `nct_pool_size` |
+| nct-consumer | `:8889` | `nct_blocks_sealed_total`, `nct_chain_height`, `nct_pool_size` |
+| worker-cpu | `:8001` | `worker_tasks_processed_total`, `worker_tasks_won_total` |
+
+---
 
 ## Seguridad
 

@@ -1,6 +1,6 @@
 import hashlib
 import json
-from app import keys
+from app import keys, metrics as m
 from app.chain import hash_bloque
 
 def sellar_bloque(resultado: dict, r) -> bool:
@@ -33,6 +33,10 @@ def sellar_bloque(resultado: dict, r) -> bool:
     pipe.delete(pending_key)
     pipe.delete(keys.POOL_PENDING)
     pipe.execute()
+
+    m.blocks_sealed.inc()
+    m.chain_height.set(block_index)
+    m.pool_size.set(0)
 
     # limpiar solicitudes de cines que fueron confirmados en este bloque
     for tx in json.loads(block.get("transactions", "[]")):

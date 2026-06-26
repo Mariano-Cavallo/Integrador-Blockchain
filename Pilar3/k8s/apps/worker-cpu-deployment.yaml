@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: worker-cpu
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
     spec:
       nodeSelector:
         role: apps
@@ -23,6 +26,9 @@ spec:
                 secretKeyRef:
                   name: nct-rabbitmq-url
                   key: RABBITMQ_URL
+          ports:
+            - containerPort: 8001
+              name: metrics
           resources:
             requests:
               cpu: "250m"          # necesario para que el HPA por CPU funcione

@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: nct-consumer
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8889"
     spec:
       nodeSelector:
         role: apps
@@ -18,6 +21,9 @@ spec:
         - name: nct-consumer
           image: <ARTIFACT_REGISTRY>/nct:latest
           command: ["python", "-m", "scripts.run_consumer"]
+          ports:
+            - containerPort: 8889
+              name: metrics
           envFrom:
             - configMapRef:
                 name: nct-config

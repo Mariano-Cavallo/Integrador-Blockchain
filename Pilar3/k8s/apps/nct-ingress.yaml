@@ -11,7 +11,8 @@ spec:
         - 34.122.53.67.nip.io     
       secretName: nct-tls         
   rules:
-    - http:
+    - host: 34.122.53.67.nip.io
+      http:
         paths:
           - path: /
             pathType: Prefix

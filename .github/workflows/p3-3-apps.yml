@@ -17,7 +17,7 @@ env:
   PROJECT_ID: blockchain-tp
   REGION: us-central1
   REGISTRY: us-central1-docker.pkg.dev/blockchain-tp/blockchain-registry
-  CLUSTER: blockchain-cluster      # confirmar el nombre con tu compañero
+  CLUSTER: blockchain-cluster      
   CLUSTER_ZONE: us-central1-a
 
 jobs:

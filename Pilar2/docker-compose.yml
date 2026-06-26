@@ -33,7 +33,6 @@ services:
       dockerfile: cpu/Dockerfile
     environment:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/   # host = nombre del servicio
-      LOG_FILE: /var/log/worker.log
     depends_on:
       rabbitmq:
         condition: service_healthy   # espera a que RabbitMQ este listo
@@ -48,7 +47,6 @@ services:
     environment:
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      LOG_FILE: /var/log/nct.log
     depends_on:
       redis:
         condition: service_healthy
@@ -64,7 +62,6 @@ services:
     environment:
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      LOG_FILE: /var/log/nct-consumer.log
     depends_on:
       redis:
         condition: service_healthy

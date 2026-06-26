@@ -40,7 +40,7 @@ las txs pendientes, las encadena al bloque anterior mediante hashes y vacía el 
 | `nct/scripts/seed_genesis.py` | Siembra el bloque génesis en Redis (emisores autorizados, quórum, tokens por entrada, dificultad del PoW). |
 | `worker/` | Mineros que consumen `mining_tasks` y publican en `mining_results`. `common/consumer.py` (lógica compartida `run_worker(minar)`), `cpu/miner.py` (Python), `gpu/miner.py` (invoca el binario CUDA del Pilar 1). Dockerizado, escalable con `--scale worker-cpu=N`. |
 | `nct/Dockerfile` + `nct/scripts/run_consumer.py` | Imagen del NCT. La misma imagen corre como API (`uvicorn`) o como consumidor (`run_consumer` → `_consumir` en primer plano), según el `command`. |
-| `nct/app/logging_config.py` | Configura logging a consola + archivo (`LOG_FILE`), para NCT y consumidor. |
+| `nct/app/logging_config.py` | Configura logging a la salida estándar (stdout/stderr), para NCT y consumidor. Los logs los captura y persiste la plataforma (Kubernetes / Docker). |
 | `nct/tests/` | Tests con pytest (usan `fakeredis`, no tocan el Redis real): validación de estructura, saldo, anti-doble-gasto, emisor autorizado, anti-duplicado, formación de bloque y sellado (PoW válido/inválido/duplicado). |
 | `docker-compose.yml` | Levanta toda la plataforma: Redis (AOF), RabbitMQ (UI :15672), `worker-cpu` (escalable con `--scale`), `nct-api` (:8888) y `nct-consumer` (sella bloques). |
 

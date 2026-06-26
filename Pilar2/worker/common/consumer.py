@@ -6,7 +6,6 @@ from common.config import RABBITMQ_URL
 
 MINING_TASKS = "mining_tasks" 
 MINING_RESULTS = "mining_results"
-LOG_FILE = os.getenv("LOG_FILE", "worker.log")   # local: ./worker.log ; docker: /var/log/worker.log
 
 
 logging.basicConfig(
@@ -14,7 +13,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.StreamHandler(),                  # consola
-        logging.FileHandler(LOG_FILE),  # disco
     ],
 )
 logging.getLogger("pika").setLevel(logging.WARNING)   # silenciar ruido de pika

@@ -7,7 +7,7 @@ from app import keys, metrics as m
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import make_asgi_app
-from app.config import RABBITMQ_URL
+from app.config import rabbitmq_params
 from app.redis_client import get_redis
 from app.validation import validar_tx
 from app.balances import calcular_saldo
@@ -147,7 +147,7 @@ def health():
 
     # RabbitMQ
     try:
-        conexion = pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
+        conexion = pika.BlockingConnection(rabbitmq_params())
         conexion.close()
         estado["rabbitmq"] = "ok"
     except Exception:

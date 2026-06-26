@@ -27,4 +27,3 @@ spec:
                   name: worker-gpu-rabbitmq
                   key: RABBITMQ_URL
 
-

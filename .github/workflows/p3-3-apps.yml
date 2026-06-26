@@ -56,7 +56,7 @@ jobs:
       # 5. Crear/actualizar el Secret de la URL de RabbitMQ
       - run: |
           kubectl create secret generic nct-rabbitmq-url \
-            --from-literal=RABBITMQ_URL="amqp://poptoken:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5672/" \
+            --from-literal=RABBITMQ_URL="amqps://poptoken:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5671/" \
             --dry-run=client -o yaml | kubectl apply -f -
       
       # 6. secrets de grafana (admin user y password)

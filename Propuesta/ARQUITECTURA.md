@@ -16,10 +16,12 @@ con minería distribuida y tolerancia a fallos.
    ║                                                ║        │
    ║   ┌────────────────────────────────────────┐   ║        │
    ║   │ Ingress nginx  (LB 34.122.53.67)       │   ║        │
-   ║   │  TLS cert autofirmado (Secret nct-tls) │   ║        │
-   ║   └───────────────────┬────────────────────┘   ║        │
-   ║                       │ /  → nct-api           ║        │
-   ║   ┌───────────── nodegroup APPS ───────────┐   ║        │
+   ║   │  TLS Let's Encrypt (cert-manager)      │   ║        │
+   ║   │  poptoken.<ip>.nip.io → nct-api        │   ║        │
+   ║   │  grafana.<ip>.nip.io  → grafana        │   ║        │
+   ║   └─────────────┬──────────────┬───────────┘   ║        │
+   ║                 │ /            │ /             ║        │
+   ║   ┌─nodegroup APPS (2–4 nodos,autoscaling)─┐   ║        │
    ║   │                   ▼                    │   ║        │
    ║   │   ┌─────────────────────────────┐      │   ║        │
    ║   │   │ nct-api  (Deployment ×2)    │      │   ║        │
@@ -34,18 +36,19 @@ con minería distribuida y tolerancia a fallos.
    ║   │   │ sella bloques │  │ minero CPU   │  │   ║        │
    ║   │   │ + auto-bloque │  │ (respaldo)   │  │   ║        │
    ║   │   │ (lock Redis)  │  │ /metrics     │  │   ║        │
-   ║   │   │ /metrics(:8889│  │ (:8001)      │  │   ║        │
+   ║   │   │/metrics(:8889)│  │ (:8001)      │  │   ║        │
    ║   │   └──┬─────────┬──┘  └──────┬───────┘  │   ║        │
    ║   │      │         │            │          │   ║        │
    ║   │   ┌──────────────────────────────────┐ │   ║        │
    ║   │   │ grafana  (Deployment ×1)         │ │   ║        │
-   ║   │   │  dashboard de métricas           │ │   ║        │
-   ║   │   │  LB → IP pública (:3000)         │ │   ║        │
+   ║   │   │  dashboard de métricas (:3000)   │ │   ║        │
+   ║   │   │  ClusterIP ← Ingress nginx + TLS │ │   ║        │
+   ║   │   │  admin pass en Secret grafana-adm│ │   ║        │
    ║   │   └──────────────────────────────────┘ │   ║        │
    ║   └──────┼─────────┼────────────┼──────────┘   ║        │
    ║          │         │            │              ║        │
    ║   ┌──────┼─────────┼────────────┼───────────┐  ║        │
-   ║   │      ▼ nodegroup INFRA      ▼           │  ║        │
+   ║   │  ▼ nodegroup INFRA (2 nodos fijos)  ▼   │  ║        │
    ║   │  ┌──────────┐  ┌──────────┐  ┌───────┐  │  ║        │
    ║   │  │  Redis   │  │RabbitMQ  │  │Promet.│  │  ║        │
    ║   │  │ StatefulS│  │StatefulS │  │Deploy │  │  ║        │
@@ -56,9 +59,9 @@ con minería distribuida y tolerancia a fallos.
    ║   │  └──────────┘  └──────────┘  │  scrape  │  ║        │
    ║   │                    ▲         │  pods    │  ║        │
    ║   │                    └─────────┘          │  ║        │
-   ║   │              Service LoadBalancer        │  ║        │
-   ║   │              rabbitmq-external           │  ║        │
-   ║   │              (35.222.70.5:5672)◄─────────┼──╬────────┘
+   ║   │              Service LoadBalancer       │  ║        │
+   ║   │              rabbitmq-external          │  ║        │
+   ║   │              (35.222.70.5:5672)◄────────┼──╬────────┘
    ║   └─────────────────────────────────────────┘  ║
    ╚════════════════════════════════════════════════╝
                           ▲
@@ -116,7 +119,7 @@ con minería distribuida y tolerancia a fallos.
 | **Redis** | GKE / infra | Estado: cadena, saldos, pool | 1 + PVC (reschedule) |
 | **RabbitMQ** | GKE / infra | Colas de PoW (tasks/results) | 3 réplicas (classic_config peer discovery) |
 | **Prometheus** | GKE / infra | Recolección de métricas (scrape por anotaciones) | 1 + PVC 10Gi |
-| **Grafana** | GKE / apps | Visualización de métricas | 1 + LoadBalancer |
+| **Grafana** | GKE / apps | Visualización de métricas (detrás del Ingress, sin IP pública propia) | 1 (ClusterIP) |
 | **worker-gpu** | Cluster profe | Minero CUDA (primario) | 1 + GPU |
 
 ## Tolerancia a fallos
@@ -128,8 +131,8 @@ con minería distribuida y tolerancia a fallos.
 
 ## Monitoring (Prometheus + Grafana)
 
-- **Prometheus** corre en `infra-pool`, scrapea métricas cada 15s usando auto-discovery por anotaciones (`prometheus.io/scrape: "true"`).
-- **Grafana** expone dashboard en IP pública (LoadBalancer `:3000`). Datasource: `http://prometheus:9090`.
+- **Prometheus** corre en `infra-pool`, scrapea métricas cada 15s (modelo *pull*) usando auto-discovery por anotaciones (`prometheus.io/scrape: "true"`). Retención TSDB de 7 días sobre PVC de 10Gi. **No está expuesto a internet** (`ClusterIP`): solo accesible internamente, principalmente por Grafana.
+- **Grafana** se accede por `https://grafana.<ip>.nip.io` a través del **Ingress nginx con TLS de Let's Encrypt** (ya no LoadBalancer público). El Service es `ClusterIP`. La contraseña del admin vive en el Secret `grafana-admin` (alimentado desde GitHub Secrets `GRAFANA_PASS`), el acceso anónimo está deshabilitado. Datasource: `http://prometheus:9090` (interno).
 
 | Componente | Puerto métricas | Métricas expuestas |
 |---|---|---|
@@ -141,10 +144,12 @@ con minería distribuida y tolerancia a fallos.
 
 ## Seguridad
 
-- **HTTPS** (cert autofirmado) en el Ingress — necesario para `crypto.subtle` de las wallets.
-- **Credenciales de RabbitMQ** en Secrets de K8s (no hardcodeadas).
+- **HTTPS** con cert de **Let's Encrypt** (cert-manager, ClusterIssuer `letsencrypt-prod`) en el Ingress — necesario para `crypto.subtle` de las wallets.
+- **Credenciales en Secrets de K8s** (no hardcodeadas): RabbitMQ (`nct-rabbitmq-url`) y admin de Grafana (`grafana-admin`), ambos alimentados desde GitHub Secrets.
+- **Grafana** no se expone con IP pública directa: queda detrás del Ingress (TLS), con login obligatorio y acceso anónimo deshabilitado. **Prometheus** queda interno (`ClusterIP`), sin acceso desde internet.
 - **OIDC / Workload Identity** para el CI/CD (sin claves estáticas en GitHub).
 - **RabbitMQ inter-cluster**: usuario/password + (pendiente) restringir IP de origen.
+- **Logs a stdout/stderr**: los pods no escriben logs a archivos internos; van a la salida estándar y los captura/persiste la plataforma (Kubernetes).
 
 ## CI/CD (GitHub Actions)
 

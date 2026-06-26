@@ -26,6 +26,8 @@ spec:
           ports:
             - containerPort: 5672
               name: amqp
+            - containerPort: 5671
+              name: amqps
             - containerPort: 15672
               name: management
             - containerPort: 4369
@@ -65,6 +67,9 @@ spec:
               mountPath: /etc/rabbitmq
             - name: data
               mountPath: /var/lib/rabbitmq
+            - name: certs
+              mountPath: /certs
+              readOnly: true
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "ping"]
@@ -84,6 +89,10 @@ spec:
                 path: rabbitmq.conf
               - key: enabled_plugins
                 path: enabled_plugins
+        - name: certs
+          secret:
+            secretName: rabbitmq-certs
+            defaultMode: 0400
   volumeClaimTemplates:
     - metadata:
         name: data

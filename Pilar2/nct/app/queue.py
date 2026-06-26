@@ -1,13 +1,12 @@
 import json
 import pika
-from app.config import RABBITMQ_URL
+from app.config import rabbitmq_params
 
 MINING_TASKS = "mining_tasks"   # nombre de la cola de tareas de minado
 
 def publicar_tarea(tarea: dict):
     # 1. conectar
-    params = pika.URLParameters(RABBITMQ_URL)
-    conexion = pika.BlockingConnection(params)
+    conexion = pika.BlockingConnection(rabbitmq_params())
     canal = conexion.channel()
 
     # 2. declarar la cola (idempotente: si ya existe, no hace nada)

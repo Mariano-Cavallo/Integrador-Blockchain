@@ -56,7 +56,8 @@ resource "google_container_node_pool" "infra" {
   }
 }
 
-# Pool de apps: corre nct-api, nct-consumer y worker-cpu
+
+# Pool de apps: corre nct-api, nct-consumer y worker-CPU
 # Con autoscaling: GKE agrega o quita nodos segun la demanda
 resource "google_container_node_pool" "apps" {
   name     = "apps-pool"

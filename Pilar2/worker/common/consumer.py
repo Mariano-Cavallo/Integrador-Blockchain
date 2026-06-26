@@ -29,9 +29,9 @@ def run_worker(minar):
     conexion = pika.BlockingConnection(params)
     canal = conexion.channel()
     canal.queue_declare(queue=MINING_TASKS, durable=True,
-                        arguments={"x-queue-type": "quorum"})
+                        arguments={"x-queue-type": "quorum", "x-quorum-initial-group-size": 3})
     canal.queue_declare(queue=MINING_RESULTS, durable=True,
-                        arguments={"x-queue-type": "quorum"})
+                        arguments={"x-queue-type": "quorum", "x-quorum-initial-group-size": 3})
     log.info("Worker conectado, esperando tareas en %s", MINING_TASKS)  
 
     def callback(ch, method, props, body):

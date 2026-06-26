@@ -115,6 +115,35 @@
       <button class="full secondary" onclick="solicitarEmisor()">Solicitar ser cine emisor</button>
 
       <div class="msg" id="msg-login"></div>
+
+      <!-- Sección de importación: se muestra cuando no hay clave en localStorage -->
+      <div id="import-section" style="display:none; margin-top:12px;">
+        <p style="color:var(--err); font-size:12px; margin:0 0 8px;">No se encontró la clave en este navegador. Ingresala para continuar.</p>
+        <label>Pegá tu clave privada (JSON)</label>
+        <textarea id="import-clave-texto" placeholder='{"kty":"EC","crv":"P-384",...}' style="width:100%; height:80px; font-family:monospace; font-size:11px; background:var(--bg); color:var(--txt); border:1px solid var(--border); border-radius:6px; padding:10px; resize:none; margin-top:4px; box-sizing:border-box;"></textarea>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button onclick="conectarConClaveImportada()" style="flex:1; margin-top:0;">Conectar</button>
+          <label style="flex:1; margin:0;">
+            <input type="file" id="import-file-input" accept=".json" onchange="importarDesdeArchivo(event)" style="display:none;">
+            <button class="secondary" style="width:100%; margin-top:0;" onclick="document.getElementById('import-file-input').click()">Importar .json</button>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: mostrar clave privada una sola vez al crear wallet -->
+  <div id="modal-clave" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:28px; max-width:520px; width:90%;">
+      <h2 style="margin:0 0 8px; color:var(--err); font-size:15px;">⚠ Guardá tu clave privada</h2>
+      <p style="color:var(--muted); font-size:13px; margin:0 0 16px;">Esta es la <strong style="color:var(--txt);">única vez</strong> que verás tu clave privada. Sin ella no podrás acceder a tu wallet desde otro navegador.</p>
+      <textarea id="modal-clave-texto" readonly style="width:100%; height:130px; font-family:monospace; font-size:11px; background:var(--bg); color:var(--txt); border:1px solid var(--border); border-radius:6px; padding:10px; resize:none; box-sizing:border-box;"></textarea>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button onclick="copiarClave()" class="secondary" style="flex:1; margin-top:0;">Copiar</button>
+        <button onclick="descargarClave()" class="secondary" style="flex:1; margin-top:0;">Descargar .json</button>
+      </div>
+      <button onclick="confirmarGuardado()" class="full" style="margin-top:12px; background:var(--ok);">✓ Ya la guardé, continuar</button>
+      <div class="msg" id="msg-modal" style="margin-top:8px; min-height:16px;"></div>
     </div>
   </div>
 
@@ -245,7 +274,14 @@
       const m = document.getElementById("msg-login");
       if (!nombre) { m.className = "msg err"; m.textContent = "Ingresá un nombre de wallet."; return; }
       try {
-        m.className = "msg"; m.textContent = "Generando claves...";
+        m.className = "msg"; m.textContent = "Verificando...";
+        // verificar si el nombre ya está registrado en el servidor
+        const tipo = await fetch(`/tipo_wallet/${encodeURIComponent(nombre)}`).then(r => r.json());
+        if (tipo.tipo !== "desconocida") {
+          m.className = "msg err"; m.textContent = "Esa wallet ya existe. Usá 'Conectar wallet existente'.";
+          return;
+        }
+        m.textContent = "Generando claves...";
         const keypair = await crypto.subtle.generateKey(
           { name: "ECDSA", namedCurve: "P-384" }, true, ["sign", "verify"]
         );
@@ -258,10 +294,15 @@
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ wallet: nombre, public_key: pubPEM })
         });
-        await loginConClave(nombre, keypair.privateKey);
+        // guardar contexto para usar después de que el usuario confirme haber guardado la clave
+        window._pendingLogin = { tipo: "usuario", nombre, privateKey: keypair.privateKey, privJWK };
+        document.getElementById("modal-clave-texto").value = JSON.stringify(privJWK, null, 2);
+        document.getElementById("modal-clave").style.display = "flex";
+        document.getElementById("msg-modal").textContent = "";
+        m.textContent = "";
       } catch (e) {
-        document.getElementById("msg-login").className = "msg err";
-        document.getElementById("msg-login").textContent = "✗ " + e.message;
+        m.className = "msg err";
+        m.textContent = "✗ " + e.message;
       }
     }
 
@@ -271,13 +312,16 @@
       if (!nombre) { m.className = "msg err"; m.textContent = "Ingresá un nombre de wallet."; return; }
       const privJWK = localStorage.getItem(`wallet_${nombre}_priv`);
       const pubPEM  = localStorage.getItem(`wallet_${nombre}_pub`);
-      if (!privJWK || !pubPEM) { m.className = "msg err"; m.textContent = "Wallet no encontrada en este browser."; return; }
+      if (!privJWK) {
+        // no hay clave en este browser → mostrar sección para ingresarla manualmente
+        document.getElementById("import-section").style.display = "block";
+        document.getElementById("import-clave-texto").value = "";
+        m.className = "msg"; m.textContent = "";
+        return;
+      }
       try {
         m.className = "msg"; m.textContent = "Conectando...";
-        await api("/register", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wallet: nombre, public_key: pubPEM })
-        });
+        document.getElementById("import-section").style.display = "none";
         const privateKey = await crypto.subtle.importKey(
           "jwk", JSON.parse(privJWK), { name: "ECDSA", namedCurve: "P-384" }, false, ["sign"]
         );
@@ -292,7 +336,13 @@
       const m = document.getElementById("msg-login");
       if (!nombre) { m.className = "msg err"; m.textContent = "Ingresá un nombre de wallet."; return; }
       try {
-        m.className = "msg"; m.textContent = "Generando claves y enviando solicitud...";
+        m.className = "msg"; m.textContent = "Verificando...";
+        const tipo = await fetch(`/tipo_wallet/${encodeURIComponent(nombre)}`).then(r => r.json());
+        if (tipo.tipo !== "desconocida") {
+          m.className = "msg err"; m.textContent = "Esa wallet ya existe. Usá 'Conectar wallet existente'.";
+          return;
+        }
+        m.textContent = "Generando claves...";
         const keypair = await crypto.subtle.generateKey(
           { name: "ECDSA", namedCurve: "P-384" }, true, ["sign", "verify"]
         );
@@ -305,21 +355,11 @@
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ wallet: nombre, public_key: pubPEM })
         });
-        // autenticarse
-        const { challenge } = await api(`/challenge/${encodeURIComponent(nombre)}`);
-        const enc = new TextEncoder();
-        const sigRaw = await crypto.subtle.sign(
-          { name: "ECDSA", hash: { name: "SHA-256" } }, keypair.privateKey, enc.encode(challenge)
-        );
-        const authResp = await api("/auth", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wallet: nombre, signature: rawToDerHex(new Uint8Array(sigRaw)) })
-        });
-        sessionToken = authResp.token;
-        walletActual = nombre;
-        // enviar solicitud de emisor
-        await api("/solicitar_emisor", { method: "POST" });
-        mostrarPendiente(nombre, { votos_a_favor: 0, votos_en_contra: 0 });
+        window._pendingLogin = { tipo: "emisor", nombre, privateKey: keypair.privateKey, privJWK };
+        document.getElementById("modal-clave-texto").value = JSON.stringify(privJWK, null, 2);
+        document.getElementById("modal-clave").style.display = "flex";
+        document.getElementById("msg-modal").textContent = "";
+        m.textContent = "";
       } catch (e) {
         m.className = "msg err"; m.textContent = "✗ " + e.message;
       }
@@ -450,6 +490,100 @@
       } catch (e) { alert("Error al votar: " + e.message); }
     }
 
+    // ── modal clave privada ───────────────────────────────────
+    function copiarClave() {
+      const texto = document.getElementById("modal-clave-texto").value;
+      navigator.clipboard.writeText(texto).then(() => {
+        const m = document.getElementById("msg-modal");
+        m.className = "msg ok"; m.textContent = "✓ Copiado al portapapeles";
+      }).catch(() => {
+        const m = document.getElementById("msg-modal");
+        m.className = "msg err"; m.textContent = "✗ No se pudo copiar. Seleccioná el texto manualmente.";
+      });
+    }
+
+    function descargarClave() {
+      const texto = document.getElementById("modal-clave-texto").value;
+      const nombre = window._pendingLogin?.nombre || "wallet";
+      const blob = new Blob([texto], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `clave-privada-${nombre}.json`;
+      a.click();
+      const m = document.getElementById("msg-modal");
+      m.className = "msg ok"; m.textContent = "✓ Archivo descargado";
+    }
+
+    async function confirmarGuardado() {
+      document.getElementById("modal-clave").style.display = "none";
+      const { tipo, nombre, privateKey } = window._pendingLogin;
+      window._pendingLogin = null;
+      if (tipo === "emisor") {
+        const m = document.getElementById("msg-login");
+        try {
+          m.className = "msg"; m.textContent = "Enviando solicitud...";
+          const { challenge } = await api(`/challenge/${encodeURIComponent(nombre)}`);
+          const enc = new TextEncoder();
+          const sigRaw = await crypto.subtle.sign(
+            { name: "ECDSA", hash: { name: "SHA-256" } }, privateKey, enc.encode(challenge)
+          );
+          const authResp = await api("/auth", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ wallet: nombre, signature: rawToDerHex(new Uint8Array(sigRaw)) })
+          });
+          sessionToken = authResp.token;
+          walletActual = nombre;
+          await api("/solicitar_emisor", { method: "POST" });
+          mostrarPendiente(nombre, { votos_a_favor: 0, votos_en_contra: 0 });
+        } catch (e) {
+          m.className = "msg err"; m.textContent = "✗ " + e.message;
+        }
+      } else {
+        await loginConClave(nombre, privateKey);
+      }
+    }
+
+    // ── importar clave privada desde otro browser ─────────────
+    async function conectarConClaveImportada() {
+      const nombre = val("login-wallet");
+      const m = document.getElementById("msg-login");
+      const texto = document.getElementById("import-clave-texto").value.trim();
+      if (!nombre) { m.className = "msg err"; m.textContent = "Ingresá el nombre de wallet."; return; }
+      if (!texto)  { m.className = "msg err"; m.textContent = "Pegá tu clave privada primero."; return; }
+      try {
+        m.className = "msg"; m.textContent = "Verificando clave...";
+        const privJWK = JSON.parse(texto);
+        const privateKey = await crypto.subtle.importKey(
+          "jwk", privJWK, { name: "ECDSA", namedCurve: "P-384" }, false, ["sign"]
+        );
+        // reconstruir la clave pública desde el JWK privado (contiene x e y)
+        const pubJWK = { kty: privJWK.kty, crv: privJWK.crv, x: privJWK.x, y: privJWK.y, key_ops: ["verify"] };
+        const publicKey = await crypto.subtle.importKey(
+          "jwk", pubJWK, { name: "ECDSA", namedCurve: "P-384" }, true, ["verify"]
+        );
+        const pubRaw = await crypto.subtle.exportKey("spki", publicKey);
+        const pubPEM = toPEM(pubRaw);
+        // guardar en localStorage para la próxima vez en este browser
+        localStorage.setItem(`wallet_${nombre}_priv`, JSON.stringify(privJWK));
+        localStorage.setItem(`wallet_${nombre}_pub`, pubPEM);
+        document.getElementById("import-section").style.display = "none";
+        await loginConClave(nombre, privateKey);
+      } catch (e) {
+        m.className = "msg err"; m.textContent = "✗ Clave inválida: " + e.message;
+      }
+    }
+
+    function importarDesdeArchivo(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById("import-clave-texto").value = e.target.result;
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+
     // ── logout ────────────────────────────────────────────────
     function cerrarSesion() {
       clearInterval(pendingInterval);
@@ -458,6 +592,7 @@
       document.getElementById("app").style.display = "none";
       document.getElementById("pending-section").style.display = "none";
       document.getElementById("login-section").style.display = "block";
+      document.getElementById("import-section").style.display = "none";
       document.getElementById("wallet-info").style.display = "none";
       document.getElementById("wallet-saldo").style.display = "none";
       document.getElementById("btn-logout").style.display = "none";

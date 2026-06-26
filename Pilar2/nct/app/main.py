@@ -244,11 +244,13 @@ def votar_emisor(data: dict, authorization: str = Header(None)):
 @app.get("/tipo_wallet/{wallet}")
 def tipo_wallet(wallet: str):
     r = get_redis()
+    # sin clave registrada no existe como cuenta todavia, aunque su nombre
+    # este en el genesis: un cine emisor recien "existe" cuando registra su wallet
+    if not r.exists(keys.pubkey(wallet)):
+        return {"tipo": "desconocida"}
     if wallet in _get_emisores(r):
         return {"tipo": "cine"}
-    if r.exists(keys.pubkey(wallet)):
-        return {"tipo": "usuario"}
-    return {"tipo": "desconocida"}
+    return {"tipo": "usuario"}
 
 
 @app.get("/estado_emisor/{wallet}")

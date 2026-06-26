@@ -3,15 +3,17 @@ kind: Ingress
 metadata:
   name: nct-ingress
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"  
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # cert-manager: emitir el cert con este issuer y guardarlo en el secret del tls
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - 34.122.53.67.nip.io     
-      secretName: nct-tls         
+        - poptoken.34.122.53.67.nip.io
+      secretName: nct-tls
   rules:
-    - host: 34.122.53.67.nip.io
+    - host: poptoken.34.122.53.67.nip.io
       http:
         paths:
           - path: /

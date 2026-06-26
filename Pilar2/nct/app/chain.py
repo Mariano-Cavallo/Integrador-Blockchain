@@ -81,5 +81,22 @@ def leer_pool(r):
     return [json.loads(t) for t in r.lrange(keys.POOL_PENDING, 0, -1)]
 
 
+def get_emisores(r):
+    # emisores autorizados = los del genesis + los aprobados por votacion
+    # (cada aprobacion queda sellada como una tx autorizar_emisor en un bloque).
+    # Devuelve un set para chequeos `in` rapidos.
+    genesis = r.hgetall(keys.GENESIS)
+    emisores = set(json.loads(genesis.get("emisores_autorizados", "[]")))
+    altura = int(r.get(keys.CHAIN_HEIGHT) or 0)
+    for i in range(1, altura + 1):
+        bloque = r.hgetall(keys.block(i))
+        if not bloque:
+            continue
+        for tx in json.loads(bloque.get("transactions", "[]")):
+            if tx.get("type") == "autorizar_emisor":
+                emisores.add(tx["solicitante"])
+    return emisores
+
+
 def block_pending(index):
     return f"block:pending:{index}"

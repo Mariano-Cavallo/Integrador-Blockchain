@@ -11,7 +11,7 @@ from app.config import rabbitmq_params
 from app.redis_client import get_redis
 from app.validation import validar_tx
 from app.balances import calcular_saldo
-from app.chain import formar_bloque, leer_cadena, leer_bloque, leer_pool
+from app.chain import formar_bloque, leer_cadena, leer_bloque, leer_pool, get_emisores
 from app.logging_config import setup_logging
 from app.auth import verificar_firma
 from fastapi.responses import RedirectResponse
@@ -157,19 +157,8 @@ def health():
 
 
 def _get_emisores(r):
-    # emisores del genesis
-    genesis = r.hgetall(keys.GENESIS)
-    emisores = set(json.loads(genesis.get("emisores_autorizados", "[]")))
-    # escanear todos los bloques confirmados buscando AutorizarEmisor
-    altura = int(r.get(keys.CHAIN_HEIGHT) or 0)
-    for i in range(1, altura + 1):
-        bloque = r.hgetall(keys.block(i))
-        if not bloque:
-            continue
-        for tx in json.loads(bloque.get("transactions", "[]")):
-            if tx.get("type") == "autorizar_emisor":
-                emisores.add(tx["solicitante"])
-    return list(emisores)
+    # genesis + cines aprobados por votacion (logica compartida con validar_tx)
+    return list(get_emisores(r))
 
 
 @app.post("/solicitar_emisor")

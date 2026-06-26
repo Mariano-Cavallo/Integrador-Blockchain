@@ -4,6 +4,7 @@ from app import keys
 from pydantic import TypeAdapter, ValidationError
 from app.models import Transaccion
 from app.balances import calcular_saldo
+from app.chain import get_emisores
 
 _adapter = TypeAdapter(Transaccion)
 
@@ -18,8 +19,8 @@ def validar_tx(data, r):
     except ValidationError as e:
         return (False, f"estructura invalida: {e}")
 
-    genesis = r.hgetall(keys.GENESIS)
-    emisores = json.loads(genesis.get("emisores_autorizados", "[]"))
+    # emisores = genesis + cines aprobados por votacion (sellados en bloques)
+    emisores = get_emisores(r)
 
     # 2. emisor autorizado (solo emision)
     if tx.type == "emision":

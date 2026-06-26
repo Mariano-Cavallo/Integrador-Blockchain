@@ -7,7 +7,7 @@ con minería distribuida y tolerancia a fallos.
                                   INTERNET
                                      │
                   ┌──────────────────┼───────────────────────┐
-                  │ HTTPS (:443)     │ AMQP (:5672)          │
+                  │ HTTPS (:443)     │ AMQPS (:5671, TLS)    │
                   │ navegador        │ inter-cluster         │
                   ▼                  ▼                       │
    ╔════════════════════════════════════════════════╗        │
@@ -53,19 +53,19 @@ con minería distribuida y tolerancia a fallos.
    ║   │  │  Redis   │  │RabbitMQ  │  │Promet.│  │  ║        │
    ║   │  │ StatefulS│  │StatefulS │  │Deploy │  │  ║        │
    ║   │  │ 1 + PVC  │  │ 3 réplicas  │1+PVC  │  │  ║        │
-   ║   │  │ (cadena, │  │ cluster  │  │10Gi   │  │  ║        │
-   ║   │  │  saldos) │  │classic   │  │(:9090)│  │  ║        │
-   ║   │  │ AOF      │  │config    │◄─┼───────┘  │  ║        │
+   ║   │  │ (cadena, │  │classic   │  │10Gi   │  │  ║        │
+   ║   │  │  saldos) │  │config    │  │(:9090)│  │  ║        │
+   ║   │  │ AOF      │  │TLS :5671 │◄─┼───────┘  │  ║        │
    ║   │  └──────────┘  └──────────┘  │  scrape  │  ║        │
    ║   │                    ▲         │  pods    │  ║        │
    ║   │                    └─────────┘          │  ║        │
    ║   │              Service LoadBalancer       │  ║        │
    ║   │              rabbitmq-external          │  ║        │
-   ║   │              (35.222.70.5:5672)◄────────┼──╬────────┘
+   ║   │             (35.222.70.5:5671 TLS)◄─────┼──╬────────┘
    ║   └─────────────────────────────────────────┘  ║
    ╚════════════════════════════════════════════════╝
                           ▲
-                          │ AMQP por internet
+                          │ AMQPS por internet (TLS)
                           │ (consume mining_tasks,
                           │  publica mining_results)
    ╔══════════════════════╪═════════════════════════╗
@@ -117,7 +117,7 @@ con minería distribuida y tolerancia a fallos.
 | **nct-consumer** | GKE / apps | Sella bloques + auto-formación (lock distribuido) + `/metrics` (:8889) | 2 réplicas |
 | **worker-cpu** | GKE / apps | Minero CPU (respaldo elástico) + `/metrics` (:8001) | HPA 1–6 |
 | **Redis** | GKE / infra | Estado: cadena, saldos, pool | 1 + PVC (reschedule) |
-| **RabbitMQ** | GKE / infra | Colas de PoW (tasks/results) | 3 réplicas (classic_config peer discovery) |
+| **RabbitMQ** | GKE / infra | Colas de PoW (tasks/results), AMQPS/TLS en :5671 | 3 réplicas (classic_config peer discovery) |
 | **Prometheus** | GKE / infra | Recolección de métricas (scrape por anotaciones) | 1 + PVC 10Gi |
 | **Grafana** | GKE / apps | Visualización de métricas (detrás del Ingress, sin IP pública propia) | 1 (ClusterIP) |
 | **worker-gpu** | Cluster profe | Minero CUDA (primario) | 1 + GPU |
@@ -126,6 +126,7 @@ con minería distribuida y tolerancia a fallos.
 
 - **nct-api / nct-consumer**: ≥2 réplicas → si cae un pod/nodo, el otro responde.
 - **Redis**: StatefulSet + PVC → si cae el nodo, K8s reprograma y re-monta el disco (sin perder la cadena).
+- **RabbitMQ**: cluster de 3 réplicas (peer discovery `classic_config`, `cluster_partition_handling = autoheal`) → tolera la caída de un nodo. Un `initContainer` normaliza el permiso de `.erlang.cookie` a `0400` en cada arranque, requisito de Erlang para que el nodo levante.
 - **Minería**: si el worker-gpu (profe) no está disponible, el worker-cpu (GKE) mina igual → la cadena no se frena.
 - **Auto-formación de bloques**: lock distribuido en Redis → con 2 réplicas de consumer, solo una forma cada bloque (sin duplicados); si la que tiene el lock cae, otra lo toma.
 
@@ -148,12 +149,11 @@ con minería distribuida y tolerancia a fallos.
 - **Credenciales en Secrets de K8s** (no hardcodeadas): RabbitMQ (`nct-rabbitmq-url`) y admin de Grafana (`grafana-admin`), ambos alimentados desde GitHub Secrets.
 - **Grafana** no se expone con IP pública directa: queda detrás del Ingress (TLS), con login obligatorio y acceso anónimo deshabilitado. **Prometheus** queda interno (`ClusterIP`), sin acceso desde internet.
 - **OIDC / Workload Identity** para el CI/CD (sin claves estáticas en GitHub).
-- **RabbitMQ inter-cluster**: usuario/password + (pendiente) restringir IP de origen.
+- **RabbitMQ inter-cluster**: **AMQPS (AMQP sobre TLS)** en el puerto `5671` — el canal va cifrado, no en texto plano. Listener TLS configurado con `ssl_options.verify = verify_none` (cifra el canal sin exigir cert de cliente). Los certificados (CA + server, autofirmados) viven en el Secret `rabbitmq-certs`, que el pipeline `p3-2-infra` genera con openssl de forma idempotente. Autenticación por usuario/password sobre el canal cifrado. Pendiente: restringir IP de origen.
 - **Logs a stdout/stderr**: los pods no escriben logs a archivos internos; van a la salida estándar y los captura/persiste la plataforma (Kubernetes).
 
 ## CI/CD (GitHub Actions)
 
 - `p3-1-cluster` — Terraform: cluster GKE + node pools.
-- `p3-2-infra` — Redis + RabbitMQ.
+- `p3-2-infra` — Redis + RabbitMQ. Genera el Secret `rabbitmq-certs` (certs autofirmados para AMQPS) de forma idempotente.
 - `p3-3-apps` — build/push imágenes (Artifact Registry) + deploy apps. Auth por OIDC.
-- `p3-4-worker-gpu` — (pendiente) deploy del worker GPU al cluster del profe.

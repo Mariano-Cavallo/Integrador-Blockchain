@@ -8,6 +8,8 @@ on:
       - 'Pilar2/nct/**'
       - 'Pilar2/worker/**'
       - 'Pilar3/k8s/apps/**'
+      - 'Pilar3/k8s/monitoring/**'
+
 
 permissions:
   contents: read
@@ -56,9 +58,19 @@ jobs:
           kubectl create secret generic nct-rabbitmq-url \
             --from-literal=RABBITMQ_URL="amqp://poptoken:${{ secrets.RABBITMQ_PASS }}@rabbitmq:5672/" \
             --dry-run=client -o yaml | kubectl apply -f -
+      
+      # 6. secrets de grafana (admin user y password)
+      - run: |
+          kubectl create secret generic grafana-admin \
+            --from-literal=user="admin" \
+            --from-literal=password="${{ secrets.GRAFANA_PASS }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-      # 6. Desplegar los manifiestos (reemplazando el placeholder de la imagen)
+      # 7. Desplegar los manifiestos (reemplazando el placeholder de la imagen)
       #    NOTA: el cert TLS lo genera cert-manager (letsencrypt-prod) en el secret nct-tls.
       - run: |
           sed -i "s|<ARTIFACT_REGISTRY>|$REGISTRY|g" Pilar3/k8s/apps/*.yaml
           kubectl apply -f Pilar3/k8s/apps/
+          
+      # 8. Desplegar los manifiestos de monitoring (grafana)
+      - run: kubectl apply -f Pilar3/k8s/monitoring/

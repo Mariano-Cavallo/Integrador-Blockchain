@@ -20,6 +20,16 @@ spec:
         - key: role
           value: infra
           effect: NoSchedule
+      # Erlang exige que .erlang.cookie sea accesible solo por el owner (0400).
+      # Normalizamos el permiso antes de arrancar para que el nodo levante
+      # aunque algo (p.ej. un fsGroup) lo haya dejado legible por el grupo.
+      initContainers:
+        - name: fix-cookie-perms
+          image: rabbitmq:3-management
+          command: ["sh", "-c", "test -f /var/lib/rabbitmq/.erlang.cookie && chmod 0400 /var/lib/rabbitmq/.erlang.cookie || true"]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
       containers:
         - name: rabbitmq
           image: rabbitmq:3-management
@@ -92,7 +102,10 @@ spec:
         - name: certs
           secret:
             secretName: rabbitmq-certs
-            defaultMode: 0400
+            # 0444: legible por el proceso RabbitMQ sea cual sea su uid.
+            # ca/server cert son publicos; server_key queda interno al cluster
+            # (TLS verify_none, solo cifra el canal AMQP).
+            defaultMode: 0444
   volumeClaimTemplates:
     - metadata:
         name: data

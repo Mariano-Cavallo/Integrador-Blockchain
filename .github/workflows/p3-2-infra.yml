@@ -31,5 +31,29 @@ jobs:
             --zone us-central1-a \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
+      # Generar certs autofirmados para AMQPS y crear el Secret rabbitmq-certs.
+      # Con verify_none basta un cert autofirmado: cifra el canal sin validar identidad.
+      # Idempotente: si el Secret ya existe no se regenera (evita romper conexiones).
+      - name: Generar certificados TLS de RabbitMQ
+        run: |
+          if kubectl get secret rabbitmq-certs >/dev/null 2>&1; then
+            echo "rabbitmq-certs ya existe, no se regenera."
+          else
+            # CA propia
+            openssl genrsa -out ca_key.pem 2048
+            openssl req -x509 -new -nodes -key ca_key.pem -days 3650 \
+              -subj "/CN=blockchain-rabbit-ca" -out ca_certificate.pem
+            # Cert del server, firmado por la CA. CN/SAN = nombre del Service.
+            openssl genrsa -out server_key.pem 2048
+            openssl req -new -key server_key.pem -subj "/CN=rabbitmq" -out server.csr
+            printf "subjectAltName=DNS:rabbitmq,DNS:rabbitmq.default.svc.cluster.local,DNS:*.rabbitmq-headless.default.svc.cluster.local" > san.ext
+            openssl x509 -req -in server.csr -CA ca_certificate.pem -CAkey ca_key.pem \
+              -CAcreateserial -days 3650 -extfile san.ext -out server_certificate.pem
+            kubectl create secret generic rabbitmq-certs \
+              --from-file=ca_certificate.pem \
+              --from-file=server_certificate.pem \
+              --from-file=server_key.pem
+          fi
+
       - name: Aplicar manifiestos de infra
         run: kubectl apply -f Pilar3/k8s/infra/

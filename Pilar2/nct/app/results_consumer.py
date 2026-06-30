@@ -2,7 +2,7 @@ import threading
 import json
 import logging
 import pika
-from app.config import RABBITMQ_URL
+from app.config import rabbitmq_params
 from app.redis_client import get_redis
 from app.sealer import sellar_bloque
 
@@ -12,8 +12,7 @@ log = logging.getLogger("nct")
 
 def _consumir():
     r = get_redis()
-    params = pika.URLParameters(RABBITMQ_URL)
-    conexion = pika.BlockingConnection(params)
+    conexion = pika.BlockingConnection(rabbitmq_params())
     canal = conexion.channel()
     canal.queue_declare(queue=MINING_RESULTS, durable=True,
                         arguments={"x-queue-type": "quorum", "x-quorum-initial-group-size": 3})

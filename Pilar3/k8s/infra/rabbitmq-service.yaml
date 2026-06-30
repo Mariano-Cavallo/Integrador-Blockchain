@@ -26,6 +26,9 @@ spec:
     - name: amqp
       port: 5672
       targetPort: 5672
+    - name: amqps
+      port: 5671
+      targetPort: 5671
     - name: management
       port: 15672
       targetPort: 15672
@@ -39,6 +42,7 @@ spec:
   selector:
     app: rabbitmq
   ports:
-    - name: amqp
-      port: 5672
-      targetPort: 5672
+    # Solo AMQPS hacia afuera: el endpoint publico no expone el puerto plano.
+    - name: amqps
+      port: 5671
+      targetPort: 5671

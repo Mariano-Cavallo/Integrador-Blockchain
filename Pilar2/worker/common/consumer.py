@@ -3,7 +3,7 @@ import pika
 import logging
 import os
 from prometheus_client import Counter, start_http_server
-from common.config import RABBITMQ_URL
+from common.config import rabbitmq_params
 
 MINING_TASKS = "mining_tasks" 
 MINING_RESULTS = "mining_results"
@@ -23,8 +23,7 @@ log = logging.getLogger("worker")
 
 def run_worker(minar):
     start_http_server(8001)           # expone métricas en puerto 8001
-    params = pika.URLParameters(RABBITMQ_URL)
-    conexion = pika.BlockingConnection(params)
+    conexion = pika.BlockingConnection(rabbitmq_params())
     canal = conexion.channel()
     canal.queue_declare(queue=MINING_TASKS, durable=True,
                         arguments={"x-queue-type": "quorum", "x-quorum-initial-group-size": 3})

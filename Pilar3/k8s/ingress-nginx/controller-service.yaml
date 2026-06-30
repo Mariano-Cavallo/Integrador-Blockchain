@@ -1,0 +1,49 @@
+# Service del controlador ingress-nginx (NO es parte del manifiesto de tu app).
+# Vive FUERA de Pilar3/k8s/infra/ a propósito: el workflow p3-2 hace
+# `kubectl apply -f Pilar3/k8s/infra/` y este Service depende de que el
+# controlador ingress-nginx (namespace ingress-nginx) ya exista. Por eso se
+# aplica A MANO, junto con la instalación del controlador, no por el pipeline.
+#
+# Lo importante de este archivo es `spec.loadBalancerIP`: ancla el LoadBalancer
+# de GCP a la IP estática reservada `nct-ingress-ip` (34.122.53.67, region
+# us-central1), para que el hostname poptoken.34.122.53.67.nip.io nunca cambie.
+#
+# Reservar la IP en GCP (una sola vez):
+#   gcloud compute addresses create nct-ingress-ip \
+#     --addresses 34.122.53.67 --region us-central1
+#
+# Aplicar (después de instalar el controlador ingress-nginx):
+#   kubectl apply -f Pilar3/k8s/ingress-nginx/controller-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: 1.11.3
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 34.122.53.67          # IP estática reservada (nct-ingress-ip)
+  externalTrafficPolicy: Local
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  ports:
+    - name: http
+      appProtocol: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+    - name: https
+      appProtocol: https
+      port: 443
+      protocol: TCP
+      targetPort: https

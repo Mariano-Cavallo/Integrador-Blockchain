@@ -19,6 +19,7 @@ resource "google_container_cluster" "primary" {
   # Borramos el node pool por defecto para usar los nuestros con configuracion especifica
   remove_default_node_pool = true
   initial_node_count       = 1
+  deletion_protection      = false
 
   # VPC-native: necesario para que los pods tengan IPs de la red de GCP
   networking_mode = "VPC_NATIVE"

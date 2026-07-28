@@ -25,6 +25,9 @@ jobs:
       - name: Instalar gcloud
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Instalar plugin de autenticacion GKE
+        run: gcloud components install gke-gcloud-auth-plugin --quiet
+
       - name: Obtener credenciales del cluster GKE
         run: |
           gcloud container clusters get-credentials blockchain-cluster \

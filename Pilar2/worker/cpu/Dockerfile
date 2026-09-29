@@ -16,6 +16,8 @@ COPY cpu/ ./cpu/
 
 # La URL de RabbitMQ se inyecta por entorno (default apunta al servicio 'rabbitmq').
 ENV RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+# saca la serie "*_created" que prometheus_client agrega sola a cada Counter.
+ENV PROMETHEUS_DISABLE_CREATED_SERIES=True
 
 # Arranca el worker como módulo (igual que en local: python -m cpu.miner)
 CMD ["python", "-m", "cpu.miner"]

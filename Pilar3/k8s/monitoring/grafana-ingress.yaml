@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - grafana.34.122.53.67.nip.io
+        - grafana.136.112.59.83.nip.io
       secretName: grafana-tls
   rules:
-    - host: grafana.34.122.53.67.nip.io
+    - host: grafana.136.112.59.83.nip.io
       http:
         paths:
           - path: /

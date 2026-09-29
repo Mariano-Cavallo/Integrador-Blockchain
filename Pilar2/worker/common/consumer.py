@@ -2,14 +2,16 @@ import json
 import pika
 import logging
 import os
-from prometheus_client import Counter, start_http_server
+from prometheus_client import Counter, Histogram, start_http_server
 from common.config import rabbitmq_params
 
-MINING_TASKS = "mining_tasks" 
+MINING_TASKS = "mining_tasks"
 MINING_RESULTS = "mining_results"
 
 tasks_processed = Counter("worker_tasks_processed_total", "Fragmentos de minado procesados")
 tasks_won       = Counter("worker_tasks_won_total", "Fragmentos ganados (nonce encontrado)")
+task_duration   = Histogram("worker_task_duration_seconds", "Tiempo por fragmento minado",
+                             ["prefix_len"])
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,7 +35,8 @@ def run_worker(minar):
 
     def callback(ch, method, props, body):
         tarea = json.loads(body)
-        nonce, h = minar(tarea["chain"], tarea["prefix"], tarea["nonce_min"], tarea["nonce_max"])
+        with task_duration.labels(prefix_len=str(len(tarea["prefix"]))).time():
+            nonce, h = minar(tarea["chain"], tarea["prefix"], tarea["nonce_min"], tarea["nonce_max"])
         tasks_processed.inc()
         if nonce is not None:
             tasks_won.inc()

@@ -4,10 +4,13 @@ import logging
 import json
 import datetime
 from app import keys, metrics as m
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.staticfiles import StaticFiles
 from prometheus_client import make_asgi_app
-from app.config import rabbitmq_params
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from app.config import rabbitmq_params, REDIS_URL
 from app.redis_client import get_redis
 from app.validation import validar_tx
 from app.balances import calcular_saldo
@@ -19,8 +22,15 @@ from fastapi.responses import RedirectResponse
 
 app = FastAPI(title="NCT PopToken")
 
+# storage en Redis (no en memoria): con 2 replicas de nct-api, un limiter por-proceso no
+# coordinaria el limite entre las dos.
+limiter = Limiter(key_func=get_remote_address, storage_uri=REDIS_URL)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.mount("/ui", StaticFiles(directory="static", html=True), name="ui")
 app.mount("/metrics", make_asgi_app())
+m.registrar_collector_estado()
 
 setup_logging()
 log = logging.getLogger("nct")
@@ -123,7 +133,6 @@ def recibir_tx(data: dict, authorization: str = Header(None)):
     log.info("Tx %s recibida: %s", resultado, motivo)
     if not ok:
         raise HTTPException(status_code=400, detail=motivo)
-    m.pool_size.set(r.llen(keys.POOL_PENDING))
     return {"status": "aceptada", "motivo": motivo}
 
 
@@ -135,7 +144,8 @@ def balance(wallet: str, authorization: str = Header(None)):
 
 
 @app.get("/health")
-def health():
+@limiter.limit("20/minute")
+def health(request: Request):
     r = get_redis()
     estado = {}
     # Redis
@@ -152,6 +162,14 @@ def health():
         estado["rabbitmq"] = "ok"
     except Exception:
         estado["rabbitmq"] = "down"
+
+    # nct-consumer: heartbeat que escribe el loop de auto_block cada ciclo (ver keys.HEALTH_CONSUMER).
+    # si la key expiro (nadie la refresco a tiempo), lo marcamos "down" sin que nadie tenga
+    # que avisar explicitamente la caida.
+    try:
+        estado["nct-consumer"] = "ok" if r.exists(keys.HEALTH_CONSUMER) else "down"
+    except Exception:
+        estado["nct-consumer"] = "down"
 
     return estado
 
@@ -258,7 +276,8 @@ def estado_emisor(wallet: str, authorization: str = Header(None)):
 
 
 @app.post("/block")
-def crear_bloque():
+@limiter.limit("10/minute")
+def crear_bloque(request: Request):
     r = get_redis()
     bloque = formar_bloque(r)
     if bloque is None:

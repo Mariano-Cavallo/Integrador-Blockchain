@@ -9,6 +9,7 @@ log = logging.getLogger("nct")
 
 LOCK_KEY = "lock:auto_block"
 INTERVALO = 30   # segundos entre intentos de formar bloque
+HEALTH_TTL = INTERVALO + 15   # margen sobre el intervalo, para que no parpadee "down" por timing
 
 
 def _loop_auto_bloque():
@@ -17,6 +18,9 @@ def _loop_auto_bloque():
         time.sleep(INTERVALO)
         try:
             r = get_redis()
+            # heartbeat de /health: si esta replica deja de correr este loop, la key
+            # expira sola (TTL) y /health lo refleja sin que nadie tenga que "avisar".
+            r.setex(keys.HEALTH_CONSUMER, HEALTH_TTL, "1")
             if r.llen(keys.POOL_PENDING) > 0:
                 # lock distribuido: con varias réplicas, solo UNA forma el bloque por ciclo.
                 # nx=True -> set sólo si no existe (atómico). ex -> expira solo (tolerante a fallos:

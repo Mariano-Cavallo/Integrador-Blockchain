@@ -38,6 +38,29 @@ services:
         condition: service_healthy   # espera a que RabbitMQ este listo
     restart: unless-stopped          # si el worker se cae, lo reinicia
 
+  # Worker GPU local: NO se conecta al RabbitMQ de este compose, se conecta directo a la
+  # cola real de la nube (rabbitmq-external) - mina tareas reales, junto al worker-cpu de
+  # GKE y al worker-gpu del profe (que sigue corriendo aparte, sin tocar nada de eso).
+  # RABBITMQ_PASS sale de un .env local (no commiteado) - pedirla a quien tenga acceso a
+  # los GitHub Secrets del repo. No se levanta con `docker compose up -d` solo (no tiene
+  # profiles ni depends_on de nada local); se activa a mano: `docker compose up -d worker-gpu`.
+  worker-gpu:
+    build:
+      context: ./worker
+      dockerfile: gpu/Dockerfile
+      args:
+        CUDA_ARCH: ${CUDA_ARCH:-sm_89}   # RTX 4050 Laptop (Ada Lovelace) por default; ajustar segun la placa
+    environment:
+      RABBITMQ_URL: "amqps://poptoken:${RABBITMQ_PASS}@34.60.164.228:5671/"
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
   # API del NCT (FastAPI + UI). No corre el consumidor (ese es nct-consumer).
   nct-api:
     build: ./nct

@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - poptoken.34.122.53.67.nip.io
+        - poptoken.136.112.59.83.nip.io
       secretName: nct-tls
   rules:
-    - host: poptoken.34.122.53.67.nip.io
+    - host: poptoken.136.112.59.83.nip.io
       http:
         paths:
           - path: /

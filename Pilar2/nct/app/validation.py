@@ -27,38 +27,49 @@ def validar_tx(data, r):
         if tx.from_ not in emisores:
             return (False, f"emisor no autorizado: {tx.from_}")
 
-    # 3. anti-duplicado
-    tid = tx_id(data)
-    if r.sismember(keys.SEEN_TX, tid):
-        return (False, "transaccion duplicada (ya fue procesada)")
+    # A partir de aca todo depende de estado mutable y compartido (saldo, anti-duplicado)
+    # entre requests concurrentes de la MISMA wallet - sin esto, dos tx que gastan el mismo
+    # saldo podrian leer el balance antes de que cualquiera encole la suya (TOCTOU) y las
+    # dos pasar: doble gasto. El lock por wallet cierra esa ventana (mismo patron SET NX EX
+    # que el lock distribuido de auto_block.py).
+    lock_key = f"lock:tx:{tx.from_}"
+    if not r.set(lock_key, "1", nx=True, ex=5):
+        return (False, "otra transacción de esta wallet está procesándose, reintentá")
+    try:
+        # 3. anti-duplicado
+        tid = tx_id(data)
+        if r.sismember(keys.SEEN_TX, tid):
+            return (False, "transaccion duplicada (ya fue procesada)")
 
-    # 4. saldo (solo transferencia y canje)
-    if tx.type in ("transferencia", "canje"):
-        saldo = calcular_saldo(tx.from_, r)
-        if saldo < tx.tokens:
-            return (False, f"saldo insuficiente: tiene {saldo}, necesita {tx.tokens}")
+        # 4. saldo (solo transferencia y canje)
+        if tx.type in ("transferencia", "canje"):
+            saldo = calcular_saldo(tx.from_, r)
+            if saldo < tx.tokens:
+                return (False, f"saldo insuficiente: tiene {saldo}, necesita {tx.tokens}")
 
-    # 5. validar destinatario: debe estar registrado y ser del tipo correcto
-    # origen y destino no pueden ser el mismo (transferirse a uno mismo no tiene sentido
-    # y, por como se calcula el saldo, generaria tokens de la nada)
-    if tx.type in ("transferencia", "canje") and tx.from_ == tx.to:
-        return (False, "el origen y el destino no pueden ser la misma wallet")
+        # 5. validar destinatario: debe estar registrado y ser del tipo correcto
+        # origen y destino no pueden ser el mismo (transferirse a uno mismo no tiene sentido
+        # y, por como se calcula el saldo, generaria tokens de la nada)
+        if tx.type in ("transferencia", "canje") and tx.from_ == tx.to:
+            return (False, "el origen y el destino no pueden ser la misma wallet")
 
-    to_es_cine = tx.to in emisores
-    to_registrado = bool(r.exists(keys.pubkey(tx.to)))
-    if not to_registrado:
-        return (False, f"destinatario '{tx.to}' no esta registrado en el sistema")
-    if tx.type == "emision" and to_es_cine:
-        return (False, "no se puede emitir tokens a un cine emisor")
-    if tx.type == "canje" and not to_es_cine:
-        return (False, "el canje debe realizarse a un cine registrado")
-    if tx.type == "transferencia" and to_es_cine:
-        return (False, "no se puede transferir tokens a un cine")
+        to_es_cine = tx.to in emisores
+        to_registrado = bool(r.exists(keys.pubkey(tx.to)))
+        if not to_registrado:
+            return (False, f"destinatario '{tx.to}' no esta registrado en el sistema")
+        if tx.type == "emision" and to_es_cine:
+            return (False, "no se puede emitir tokens a un cine emisor")
+        if tx.type == "canje" and not to_es_cine:
+            return (False, "el canje debe realizarse a un cine registrado")
+        if tx.type == "transferencia" and to_es_cine:
+            return (False, "no se puede transferir tokens a un cine")
 
-    # 6. encolar + registrar el id
-    r.lpush(keys.POOL_PENDING, json.dumps(data))
-    r.sadd(keys.SEEN_TX, tid)
-    return (True, "ok")
+        # 6. encolar + registrar el id
+        r.lpush(keys.POOL_PENDING, json.dumps(data))
+        r.sadd(keys.SEEN_TX, tid)
+        return (True, "ok")
+    finally:
+        r.delete(lock_key)
 
 
 def tx_id(data: dict) -> str:

@@ -23,6 +23,9 @@ def r():
         "timestamp": "2026-01-01T00:00:00Z",
     })
     cliente.set(keys.CHAIN_HEIGHT, 0)
+    # dificultad movil (Mejora 1): key propia, separada del genesis (ver keys.py) - arranca
+    # igual que genesis.difficulty, como hace seed_genesis.py en real.
+    cliente.set(keys.CHAIN_DIFFICULTY, "00")
     # registrar las wallets que usan los tests (validar_tx exige que el destinatario
     # este registrado: r.exists(keys.pubkey(wallet))). El cine emisor tambien.
     for w in ("Hoyts_0xA1b2", "Alice", "Bob", "Carol"):

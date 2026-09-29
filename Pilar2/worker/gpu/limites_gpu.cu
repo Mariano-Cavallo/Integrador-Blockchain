@@ -192,8 +192,11 @@ int main(int argc, char* argv[]) {
     }
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
-    fprintf(stderr, "[GPU] %s  SM %d.%d  (binario compilado para sm_61)\n",
-            prop.name, prop.major, prop.minor);
+#ifndef CUDA_ARCH_STR
+#define CUDA_ARCH_STR "sm_61"   // default si se compila sin pasar -DCUDA_ARCH_STR (ver Dockerfile)
+#endif
+    fprintf(stderr, "[GPU] %s  SM %d.%d  (binario compilado para %s)\n",
+            prop.name, prop.major, prop.minor, CUDA_ARCH_STR);
 
     uint8_t*  d_base;
     uint8_t*  d_prefix;

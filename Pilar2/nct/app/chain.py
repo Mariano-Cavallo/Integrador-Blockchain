@@ -42,8 +42,9 @@ def formar_bloque(r):
     # 2. releer de Redis (ahora todo es string) y hashear ESA version
     bloque_redis = r.hgetall(keys.block_pending(nuevo_index))
 
-    genesis = r.hgetall(keys.GENESIS)
-    difficulty = genesis["difficulty"]
+    # dificultad movil (Mejora 1): keys.CHAIN_DIFFICULTY, NUNCA genesis.difficulty
+    # (el genesis queda fijo para siempre despues de sembrado).
+    difficulty = r.get(keys.CHAIN_DIFFICULTY)
     chain_hash = hash_bloque(bloque_redis)
 
     NONCE_MAX = 10_000_000

@@ -16,6 +16,9 @@ def main():
     }
     r.hset(keys.GENESIS, mapping=genesis)
     r.set(keys.CHAIN_HEIGHT, 0)
+    # dificultad movil (Mejora 1): arranca igual que genesis.difficulty, pero en su propia
+    # key mutable - el genesis nunca se vuelve a tocar despues de esta siembra.
+    r.set(keys.CHAIN_DIFFICULTY, genesis["difficulty"])
     print("Genesis sembrado")
 
 if __name__ == "__main__":

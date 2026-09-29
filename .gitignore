@@ -6,6 +6,8 @@
 *.key
 credentials.json
 service-account*.json
+clave-privada*.json
+*-private-key*.json
 
 # === Python ===
 __pycache__/

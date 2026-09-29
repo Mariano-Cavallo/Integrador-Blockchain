@@ -34,6 +34,17 @@ jobs:
             --zone us-central1-a \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
+      # Secret con las credenciales de RabbitMQ (usuario/pass/erlang cookie), consumido por
+      # rabbitmq-statefulset.yaml. dry-run + apply: idempotente, se puede correr de nuevo sin
+      # romper una instalación existente (actualiza el Secret si cambiaron los GH Secrets).
+      - name: Crear Secret rabbitmq-credentials
+        run: |
+          kubectl create secret generic rabbitmq-credentials \
+            --from-literal=RABBITMQ_DEFAULT_USER="${{ secrets.RABBITMQ_DEFAULT_USER }}" \
+            --from-literal=RABBITMQ_DEFAULT_PASS="${{ secrets.RABBITMQ_PASS }}" \
+            --from-literal=RABBITMQ_ERLANG_COOKIE="${{ secrets.RABBITMQ_ERLANG_COOKIE }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       # Generar certs autofirmados para AMQPS y crear el Secret rabbitmq-certs.
       # Con verify_none basta un cert autofirmado: cifra el canal sin validar identidad.
       # Idempotente: si el Secret ya existe no se regenera (evita romper conexiones).

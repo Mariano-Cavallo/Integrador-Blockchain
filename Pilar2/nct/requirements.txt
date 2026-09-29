@@ -8,3 +8,4 @@ pika
 cryptography
 prometheus-client
 slowapi
+httpx2

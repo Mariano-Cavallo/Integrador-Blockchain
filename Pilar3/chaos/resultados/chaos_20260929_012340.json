@@ -1,0 +1,343 @@
+{
+  "parametros": {
+    "url": "https://poptoken.136.112.59.83.nip.io",
+    "duracion": 120,
+    "intervalo_min": 15,
+    "intervalo_max": 30,
+    "nodos": 1,
+    "rol_nodo": "apps",
+    "worker_en_vuelo": true,
+    "timeout_recuperacion": null,
+    "out": "C:\\Users\\HP\\OneDrive\\Lautaro\\unLu\\Sistemas_distribuidos\\Integrador-Blockchain\\Pilar3\\chaos\\resultados"
+  },
+  "altura_inicial": 13,
+  "pods_matados": [
+    "worker-cpu-5878bff898-kvd68"
+  ],
+  "nodos_matados": [
+    "gke-blockchain-cluster-apps-pool-d85b8330-stjn"
+  ],
+  "tx_aceptadas": 0,
+  "tx_detalle": [],
+  "workers_matados_con_tarea_en_vuelo": 0,
+  "reasignacion_ejercitada": false,
+  "ventanas_degradadas_s": [
+    [
+      82.37,
+      180.66
+    ]
+  ],
+  "criterios": [
+    {
+      "criterio": "recuperacion: /health vuelve a ok",
+      "ok": true,
+      "detalle": "177.4s (limite 420s)"
+    },
+    {
+      "criterio": "cadena consistente (secuencial + previous_hash)",
+      "ok": true,
+      "detalle": "sin problemas"
+    },
+    {
+      "criterio": "ninguna de las 0 tx aceptadas se perdio",
+      "ok": true,
+      "detalle": "todas en cadena o pool"
+    },
+    {
+      "criterio": "trabajo reasignado: pool vacio y cola de minado en 0/0",
+      "ok": true,
+      "detalle": "estado final {'pendientes_pool': 0, 'cola_minado': (0, 0)}"
+    },
+    {
+      "criterio": "el sistema siguio avanzando (altura crecio)",
+      "ok": false,
+      "detalle": "13 -> 13"
+    }
+  ],
+  "resultado": "FALLO",
+  "eventos": [
+    {
+      "t_s": 3.64,
+      "tipo": "baseline",
+      "altura": 13,
+      "cola": [
+        0,
+        0
+      ]
+    },
+    {
+      "t_s": 65.65,
+      "tipo": "kill_pod",
+      "app": "worker-cpu",
+      "pods": [
+        "worker-cpu-5878bff898-kvd68"
+      ],
+      "tareas_en_vuelo": 0,
+      "cola": null
+    },
+    {
+      "t_s": 181.71,
+      "tipo": "kill_nodo",
+      "nodo": "gke-blockchain-cluster-apps-pool-d85b8330-stjn",
+      "rol": "apps",
+      "zona": "us-central1-a",
+      "pods_afectados": [
+        "cert-manager-5c4b7b5c7b-4btk7",
+        "cert-manager-cainjector-c8785f548-v2c2n",
+        "cert-manager-webhook-68877cb8f5-nx6lr",
+        "grafana-69b7b55895-l29hh",
+        "nct-api-844ccc76fb-n8zsx",
+        "nct-api-844ccc76fb-svnjm",
+        "nct-consumer-65594895d9-dq9pg",
+        "nct-consumer-65594895d9-ktxjj",
+        "worker-cpu-5878bff898-kvd68",
+        "worker-cpu-5878bff898-qqjw5",
+        "kube-state-metrics-0",
+        "collector-d8wnl",
+        "gmp-operator-6d48747789-b6n4v",
+        "ingress-nginx-controller-6c7cd85885-sjf2k",
+        "event-exporter-gke-fd7c546df-jbhpp",
+        "fluentbit-gke-g5k9q",
+        "gke-metrics-agent-8tk6s",
+        "konnectivity-agent-855788b4d5-5wc8s",
+        "konnectivity-agent-855788b4d5-8drr4",
+        "konnectivity-agent-855788b4d5-kvmpn",
+        "konnectivity-agent-autoscaler-8cd989d55-vnzhs",
+        "kube-dns-7974bf7888-d764j",
+        "kube-dns-7974bf7888-rhgf7",
+        "kube-dns-autoscaler-859854db85-5mb2c",
+        "kube-proxy-gke-blockchain-cluster-apps-pool-d85b8330-stjn",
+        "l7-default-backend-7d8d77ff56-vljgn",
+        "metrics-server-v1.35.1-7cdd96f59b-frv2r",
+        "node-local-dns-sxbgm",
+        "pdcsi-node-w9www"
+      ],
+      "cola": [
+        0,
+        0
+      ],
+      "ok": true,
+      "stderr": "Deleted [https://www.googleapis.com/compute/v1/projects/blockchain-tp/zones/us-central1-a/instances/gke-blockchain-cluster-apps-pool-d85b8330-stjn].\n"
+    }
+  ],
+  "muestras_health": [
+    {
+      "t_s": 5.18,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 10.38,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 15.59,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 21.15,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 26.99,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 32.42,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 37.74,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 43.07,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 48.27,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 53.73,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 59.04,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 64.2,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 69.4,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 74.67,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 13,
+      "pendientes": 0
+    },
+    {
+      "t_s": 82.37,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    },
+    {
+      "t_s": 96.4,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    },
+    {
+      "t_s": 110.44,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    },
+    {
+      "t_s": 124.49,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    },
+    {
+      "t_s": 138.53,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    },
+    {
+      "t_s": 152.57,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    },
+    {
+      "t_s": 166.61,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    },
+    {
+      "t_s": 180.66,
+      "http": null,
+      "ok": false,
+      "health": {},
+      "altura": null,
+      "pendientes": null
+    }
+  ]
+}

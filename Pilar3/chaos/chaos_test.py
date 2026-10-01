@@ -145,9 +145,16 @@ def matar_pod_al_azar(worker_en_vuelo):
     if app_label == "worker-cpu" and worker_en_vuelo:
         # se espera a que haya una tarea en vuelo y se matan TODOS los workers: asi el que
         # la tiene seguro muere y se ejercita la reasignacion (con uno solo al azar podria errar).
+        # si no aparece ninguna en el timeout (hueco de inactividad entre bloques), NO se mata
+        # nada esta vez - mejor esperar al proximo turno que matar en vano y contarlo como
+        # "ejercitado" cuando en realidad no habia nada que reasignar.
         est = esperar_tarea_en_vuelo()
+        if not est:
+            print("[chaos] worker-cpu: no encontre tarea en vuelo en la ventana de espera, "
+                  "salteo este turno (reintenta en el proximo).")
+            return None
         objetivo = pods
-        en_vuelo = est[1] if est else 0
+        en_vuelo = est[1]
     else:
         objetivo = [random.choice(pods)]
         est = estado_cola()

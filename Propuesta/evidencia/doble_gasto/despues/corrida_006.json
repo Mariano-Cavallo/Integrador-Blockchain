@@ -1,0 +1,80 @@
+{
+  "corrida": 6,
+  "wallet": "demo_doble_gasto_1790657203_6",
+  "fondos": 10,
+  "monto": 10,
+  "concurrentes": 2,
+  "delay_ms": 0,
+  "emision": {
+    "request": {
+      "type": "emision",
+      "from": "Hoyts_123",
+      "to": "demo_doble_gasto_1790657203_6",
+      "tokens": 10,
+      "motivo": "demo_doble_gasto",
+      "pelicula": "N/A",
+      "timestamp": "2026-09-29T01:46:44Z"
+    },
+    "status": 200,
+    "response": {
+      "status": "aceptada",
+      "motivo": "ok"
+    }
+  },
+  "transferencias": [
+    {
+      "request": {
+        "type": "transferencia",
+        "from": "demo_doble_gasto_1790657203_6",
+        "to": "demo_doble_gasto_dst_1790657176_0",
+        "tokens": 10,
+        "timestamp": "2026-09-29T01:46:45Z"
+      },
+      "status": 200,
+      "response": {
+        "status": "aceptada",
+        "motivo": "ok"
+      },
+      "t_envio_s": 0.0,
+      "t_respuesta_s": 0.6422
+    },
+    {
+      "request": {
+        "type": "transferencia",
+        "from": "demo_doble_gasto_1790657203_6",
+        "to": "demo_doble_gasto_dst_1790657176_1",
+        "tokens": 10,
+        "timestamp": "2026-09-29T01:46:45Z"
+      },
+      "status": 400,
+      "response": {
+        "detail": "otra transacción de esta wallet está procesándose, reintentá"
+      },
+      "t_envio_s": 0.0,
+      "t_respuesta_s": 0.6142
+    }
+  ],
+  "aceptadas": 1,
+  "doble_gasto": false,
+  "saldo_final": 0,
+  "tx_en_pool": [
+    {
+      "type": "transferencia",
+      "from": "demo_doble_gasto_1790657203_6",
+      "to": "demo_doble_gasto_dst_1790657176_0",
+      "tokens": 10,
+      "timestamp": "2026-09-29T01:46:45Z"
+    },
+    {
+      "type": "emision",
+      "from": "Hoyts_123",
+      "to": "demo_doble_gasto_1790657203_6",
+      "tokens": 10,
+      "motivo": "demo_doble_gasto",
+      "pelicula": "N/A",
+      "timestamp": "2026-09-29T01:46:44Z"
+    }
+  ],
+  "bloques_con_tx_de_la_wallet": [],
+  "altura_cadena": 13
+}

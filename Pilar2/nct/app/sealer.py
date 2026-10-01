@@ -50,11 +50,19 @@ def sellar_bloque(resultado: dict, r) -> bool:
     block["nonce"] = nonce
     block["block_hash"] = h
 
+    txs_selladas = json.loads(block.get("transactions", "[]"))
+
     pipe = r.pipeline(transaction=True)               # MULTI/EXEC
     pipe.hset(keys.block(block_index), mapping=block)
     pipe.set(keys.CHAIN_HEIGHT, block_index)
     pipe.delete(pending_key)
-    pipe.delete(keys.POOL_PENDING)
+    # sacar del pool SOLO las tx que entraron en este bloque (no vaciarlo entero): si una tx
+    # nueva llego al pool entre que se formo el bloque (foto de pool:pending en ese instante)
+    # y este sellado, un DELETE completo se la llevaria puesta sin que haya sido minada ni
+    # este en ningun bloque - se perderia en silencio. LREM saca exactamente lo sellado y deja
+    # intacto lo que llego despues, para el proximo ciclo.
+    for tx in txs_selladas:
+        pipe.lrem(keys.POOL_PENDING, 1, json.dumps(tx))
     pipe.execute()
 
     _ajustar_dificultad(r, block, difficulty)
@@ -62,7 +70,7 @@ def sellar_bloque(resultado: dict, r) -> bool:
     m.blocks_sealed.inc()
 
     # limpiar solicitudes de cines que fueron confirmados en este bloque
-    for tx in json.loads(block.get("transactions", "[]")):
+    for tx in txs_selladas:
         if tx.get("type") == "autorizar_emisor":
             r.delete(keys.solicitud_emisor(tx["solicitante"]))
 

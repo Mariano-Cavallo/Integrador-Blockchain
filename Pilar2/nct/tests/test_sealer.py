@@ -51,3 +51,25 @@ def test_duplicado_se_ignora(r):
     ok2 = sellar_bloque({"block_index": 1, "nonce": nonce, "hash": h}, r)  # de nuevo
     assert ok1 is True
     assert ok2 is False        # ya no hay pending -> se ignora
+
+
+def test_sellar_no_borra_tx_que_llego_despues_de_formar_el_bloque(r):
+    # reproduce el hallazgo de la Mejora 7 (chaos): una tx nueva que entra al pool DESPUES
+    # de la foto que toma formar_bloque() no debe perderse cuando el bloque se sella - antes
+    # del fix, sellar_bloque hacia un DELETE completo de pool:pending y se la llevaba puesta.
+    validar_tx(dict(EMISION), r)
+    formar_bloque(r)  # foto de pool:pending -> block:pending:1 (solo EMISION)
+
+    # tx nueva, llega DESPUES de la foto, mientras el bloque 1 todavia se esta minando
+    tx_tardia = {**EMISION, "to": "Bob"}
+    validar_tx(dict(tx_tardia), r)
+
+    nonce, h = _minar(r, 1)
+    ok = sellar_bloque({"block_index": 1, "nonce": nonce, "hash": h}, r)
+
+    assert ok is True
+    assert int(r.get(keys.CHAIN_HEIGHT)) == 1
+    # la tx tardia no estaba en el bloque sellado -> tiene que seguir en el pool, no perderse
+    restante = [tx for tx in r.lrange(keys.POOL_PENDING, 0, -1)]
+    assert len(restante) == 1
+    assert '"to": "Bob"' in restante[0] or '"to":"Bob"' in restante[0]

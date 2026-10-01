@@ -1,0 +1,326 @@
+{
+  "parametros": {
+    "url": "https://poptoken.136.112.59.83.nip.io",
+    "duracion": 120,
+    "intervalo_min": 15,
+    "intervalo_max": 30,
+    "nodos": 1,
+    "rol_nodo": "apps",
+    "worker_en_vuelo": true,
+    "timeout_recuperacion": null,
+    "out": "C:\\Users\\HP\\OneDrive\\Lautaro\\unLu\\Sistemas_distribuidos\\Integrador-Blockchain\\Pilar3\\chaos\\resultados"
+  },
+  "altura_inicial": 8,
+  "pods_matados": [
+    "worker-cpu-5878bff898-kvd68"
+  ],
+  "nodos_matados": [],
+  "tx_aceptadas": 68,
+  "workers_matados_con_tarea_en_vuelo": 0,
+  "reasignacion_ejercitada": false,
+  "ventanas_degradadas_s": [],
+  "criterios": [
+    {
+      "criterio": "recuperacion: /health vuelve a ok",
+      "ok": true,
+      "detalle": "0.7s (limite 420s)"
+    },
+    {
+      "criterio": "cadena consistente (secuencial + previous_hash)",
+      "ok": true,
+      "detalle": "sin problemas"
+    },
+    {
+      "criterio": "ninguna de las 68 tx aceptadas se perdio",
+      "ok": false,
+      "detalle": "tx a505d77184154e007b123f3377e19fce aceptada pero no esta ni sellada ni en el pool"
+    },
+    {
+      "criterio": "trabajo reasignado: pool vacio y cola de minado en 0/0",
+      "ok": false,
+      "detalle": "estado final {'pendientes_pool': 0, 'cola_minado': None}"
+    },
+    {
+      "criterio": "el sistema siguio avanzando (altura crecio)",
+      "ok": true,
+      "detalle": "8 -> 13"
+    }
+  ],
+  "resultado": "FALLO",
+  "eventos": [
+    {
+      "t_s": 4.92,
+      "tipo": "baseline",
+      "altura": 8,
+      "cola": [
+        0,
+        0
+      ]
+    },
+    {
+      "t_s": 66.9,
+      "tipo": "kill_pod",
+      "app": "worker-cpu",
+      "pods": [
+        "worker-cpu-5878bff898-kvd68"
+      ],
+      "tareas_en_vuelo": 0,
+      "cola": null
+    }
+  ],
+  "muestras_health": [
+    {
+      "t_s": 6.47,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 8,
+      "pendientes": 0
+    },
+    {
+      "t_s": 12.2,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 8,
+      "pendientes": 1
+    },
+    {
+      "t_s": 17.47,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 8,
+      "pendientes": 4
+    },
+    {
+      "t_s": 22.94,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 9,
+      "pendientes": 3
+    },
+    {
+      "t_s": 28.17,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 9,
+      "pendientes": 6
+    },
+    {
+      "t_s": 33.47,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 9,
+      "pendientes": 9
+    },
+    {
+      "t_s": 38.92,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 9,
+      "pendientes": 12
+    },
+    {
+      "t_s": 44.11,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 9,
+      "pendientes": 16
+    },
+    {
+      "t_s": 49.57,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 10,
+      "pendientes": 1
+    },
+    {
+      "t_s": 54.75,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 10,
+      "pendientes": 4
+    },
+    {
+      "t_s": 59.93,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 10,
+      "pendientes": 7
+    },
+    {
+      "t_s": 65.13,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 10,
+      "pendientes": 11
+    },
+    {
+      "t_s": 70.32,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 10,
+      "pendientes": 14
+    },
+    {
+      "t_s": 75.52,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 10,
+      "pendientes": 17
+    },
+    {
+      "t_s": 80.77,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 11,
+      "pendientes": 1
+    },
+    {
+      "t_s": 85.96,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 11,
+      "pendientes": 5
+    },
+    {
+      "t_s": 91.14,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 11,
+      "pendientes": 8
+    },
+    {
+      "t_s": 96.37,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 11,
+      "pendientes": 11
+    },
+    {
+      "t_s": 101.6,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 11,
+      "pendientes": 15
+    },
+    {
+      "t_s": 106.86,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 11,
+      "pendientes": 18
+    },
+    {
+      "t_s": 112.16,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 12,
+      "pendientes": 2
+    },
+    {
+      "t_s": 117.66,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 12,
+      "pendientes": 5
+    },
+    {
+      "t_s": 122.83,
+      "http": 200,
+      "ok": true,
+      "health": {
+        "redis": "ok",
+        "rabbitmq": "ok"
+      },
+      "altura": 12,
+      "pendientes": 8
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "corrida": 8,
+  "wallet": "demo_doble_gasto_1790648344_8",
+  "fondos": 10,
+  "monto": 10,
+  "concurrentes": 2,
+  "delay_ms": 0,
+  "emision": {
+    "request": {
+      "type": "emision",
+      "from": "Hoyts_123",
+      "to": "demo_doble_gasto_1790648344_8",
+      "tokens": 10,
+      "motivo": "demo_doble_gasto",
+      "pelicula": "N/A",
+      "timestamp": "2026-09-28T23:19:06Z"
+    },
+    "status": 200,
+    "response": {
+      "status": "aceptada",
+      "motivo": "ok"
+    }
+  },
+  "transferencias": [
+    {
+      "request": {
+        "type": "transferencia",
+        "from": "demo_doble_gasto_1790648344_8",
+        "to": "demo_doble_gasto_dst_1790648302_0",
+        "tokens": 10,
+        "timestamp": "2026-09-28T23:19:07Z"
+      },
+      "status": 200,
+      "response": {
+        "status": "aceptada",
+        "motivo": "ok"
+      },
+      "t_envio_s": 0.0,
+      "t_respuesta_s": 0.7317
+    },
+    {
+      "request": {
+        "type": "transferencia",
+        "from": "demo_doble_gasto_1790648344_8",
+        "to": "demo_doble_gasto_dst_1790648302_1",
+        "tokens": 10,
+        "timestamp": "2026-09-28T23:19:07Z"
+      },
+      "status": 200,
+      "response": {
+        "status": "aceptada",
+        "motivo": "ok"
+      },
+      "t_envio_s": 0.0,
+      "t_respuesta_s": 0.7403
+    }
+  ],
+  "aceptadas": 2,
+  "doble_gasto": true,
+  "saldo_final": -10,
+  "tx_en_pool": [
+    {
+      "type": "transferencia",
+      "from": "demo_doble_gasto_1790648344_8",
+      "to": "demo_doble_gasto_dst_1790648302_1",
+      "tokens": 10,
+      "timestamp": "2026-09-28T23:19:07Z"
+    },
+    {
+      "type": "transferencia",
+      "from": "demo_doble_gasto_1790648344_8",
+      "to": "demo_doble_gasto_dst_1790648302_0",
+      "tokens": 10,
+      "timestamp": "2026-09-28T23:19:07Z"
+    },
+    {
+      "type": "emision",
+      "from": "Hoyts_123",
+      "to": "demo_doble_gasto_1790648344_8",
+      "tokens": 10,
+      "motivo": "demo_doble_gasto",
+      "pelicula": "N/A",
+      "timestamp": "2026-09-28T23:19:06Z"
+    }
+  ],
+  "bloques_con_tx_de_la_wallet": [],
+  "altura_cadena": 1
+}
